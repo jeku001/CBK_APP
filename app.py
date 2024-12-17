@@ -4,6 +4,7 @@ from tkinter import filedialog, messagebox, ttk
 from parser import Parser
 from plot import Plots
 import os
+import matplotlib.pyplot as plt
 
 # Tkinter Application
 class App:
@@ -63,10 +64,16 @@ class App:
         self.column_listbox.pack(side="left", fill="both", expand=True)
 
         # Run Parser
-        tk.Button(root, text="Run Parser", command=self.run_parser).grid(row=4, column=2, padx=10, pady=20)
+        tk.Button(root, text="Run Parser", command=self.run_parser, bg="#d4f8d4", activebackground="#b3e6b3").grid(row=4, column=2, padx=10, pady=20)
 
-        tk.Button(root, text="Plot Data", command=self.plot_data).grid(row=5, column=2, padx=10, pady=10)
+        tk.Button(root, text="Plot Data", command=self.plot_data, bg="#d4f8d4", activebackground="#b3e6b3").grid(row=5, column=2, padx=10, pady=10)
 
+        tk.Label(root,
+                 text="You can select different columns for parsing and plotting without restarting the application.\nRun Parser and Plot Data multiple times for different columns.",
+                 fg="gray").grid(row=6, column=0, columnspan=4, pady=10)
+
+        tk.Button(root, text="Exit", command=self.terminate_app, bg="#f8d4d4", activebackground="#e6b3b3").grid(
+            row=7, column=1, columnspan=2, pady=10)
 
         # Załaduj domyślne kolumny
         self.update_columns()
@@ -144,15 +151,88 @@ class App:
     def get_columns_9(self):
         return ["'Reset Count File","'Reset Reason File","'Comm Err Count File","'Scrub Index File","'SEU Count File","'Init Pointer File","'Ping Pointer File","'ADC Raw1 File","'ADC Raw2 File","'ADC Raw3 File","'ADC Raw4 File","'PWM Setting File","'PWM Period File","'PWM Controller Pointer File","'PWM Controller Cycle File","'PWM DCycle1 File","'PWM DCycle2 File","'PWM DCycle3 File","'PWM DCycle4 File","'Converted Temp1 File(°C)","'Converted Temp2 File(°C)","'Converted Temp3 File(°C)","'Converted Temp4 File(°C)","'Controller P Gain File","'Controller I Gain File","'Controller D Gain File","'Controller I Max File","'Controller Max DT File","'Controller SetPoint File","'Controller I State File"]
 
+    def confirm_and_plot(self, window, column_listbox):
+        selected_indices = column_listbox.curselection()
+        selected_columns = [column_listbox.get(i) for i in selected_indices]
+
+        if not selected_columns:
+            messagebox.showerror("Error", "No columns selected for plotting.")
+            return
+
+        window.destroy()  # Zamknięcie okna dialogowego
+
+        # Generowanie wykresu dla wybranych kolumn
+        plots = Plots()
+        plots.plot(self.parsed_data, selected_columns)
+
     def plot_data(self):
         if self.parsed_data is None or self.parsed_data.empty:
             messagebox.showerror("Error", "No data to plot. Please run the parser first.")
             return
-        selected_indices = self.column_listbox.curselection()
-        selected_columns = [self.column_listbox.get(i) for i in selected_indices]
 
-        plots = Plots()
-        plots.plot(self.parsed_data, selected_columns)
+        # Tworzenie nowego okna dialogowego
+        plot_window = tk.Toplevel(self.root)
+        plot_window.title("Select Columns to Plot")
+        plot_window.geometry("400x300")
+
+        tk.Label(plot_window, text="Select Columns for Plotting:").pack(pady=10)
+
+        # Listbox do ponownego wyboru kolumn
+        column_listbox = tk.Listbox(plot_window, selectmode="multiple", height=15, width=50)
+        column_listbox.pack(padx=10, pady=10)
+
+        # Dodanie kolumn do listy
+        for col in self.parsed_data.columns[3:]:  # Pomijamy pierwsze 3 kolumny
+            column_listbox.insert(tk.END, col)
+
+        # Przycisk do potwierdzenia
+        tk.Button(plot_window, text="Plot Selected",
+                  command=lambda: self.confirm_and_plot(plot_window, column_listbox)).pack(pady=5)
+
+    def plot_loop(self):
+        def plot_and_show_options():
+            selected_indices = self.column_listbox.curselection()
+            selected_columns = [self.column_listbox.get(i) for i in selected_indices]
+
+            if not selected_columns:
+                messagebox.showerror("Error", "No columns selected for plotting.")
+                return
+
+            # Generowanie wykresu dla zaznaczonych kolumn
+            plots = Plots()
+            plots.plot(self.parsed_data, selected_columns)
+
+            # Wyświetlenie okna opcji
+            options_window = tk.Toplevel(self.root)
+            options_window.title("Plot Options")
+            options_window.geometry("300x150")
+
+            tk.Label(options_window, text="Choose an action:").pack(pady=10)
+
+            # Przycisk: Pobierz wykres
+            tk.Button(options_window, text="Download Plot", command=lambda: self.download_plot(options_window)).pack(
+                pady=5)
+
+            # Przycisk: Wybierz inną kolumnę
+            tk.Button(options_window, text="Move to Another", command=lambda: options_window.destroy()).pack(pady=5)
+
+            # Przycisk: Zakończ
+            tk.Button(options_window, text="Terminate", command=lambda: self.terminate_app(options_window)).pack(pady=5)
+
+        # Główna pętla – wybór kolumn i generowanie wykresów
+        while True:
+            plot_and_show_options()
+            if hasattr(self, 'terminate') and self.terminate:
+                break
+
+    def download_plot(self, window):
+        plt.savefig("plot_output.pdf", format="pdf")
+        messagebox.showinfo("Success", "Plot saved as plot_output.pdf")
+        window.destroy()
+
+    def terminate_app(self):
+        self.root.destroy()  # Zamyka główne okno aplikacji
+
 
 if __name__ == "__main__":
     root = tk.Tk()
