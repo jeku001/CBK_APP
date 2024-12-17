@@ -1,3 +1,9 @@
+# Ignorowanie wszystkich plików CSV
+*.csv
+
+# Ignorowanie folderu UAM_BRITE oraz jego zawartości
+UAM_BRITE/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
