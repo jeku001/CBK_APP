@@ -10,80 +10,134 @@ class App:
         self.root = root
         self.root.title("Data Parser Application")
         self.base_folder = ""
-
-        self.additional_columns = []
         self.file_pattern = "0-Power Board"  # Domyślny wzorzec
-        self.available_columns = [
-            "'HKC Current(mA)",
-            "'ADCC Current(mA)",
-            "'Rate Sensor Current(mA)",
-            "'Sun Sensor Current(mA)",
-            "'Wheel Sum Current(mA)"
-        ]
+        self.additional_columns = []
 
-        self.file_patterns = [
-            "0-Power Board", "1-BCDR0", "3-S-Band", "4-HKC", "5-IOBC",
-            "6-ACS", "7-ADCS", "8-ADC_SUB", "9-Header Board"
-        ]
+        # Mapowanie wzorców plików na listy kolumn
+        self.pattern_columns = {
+            "0-Power Board": self.get_columns_0(),
+            "1-BCDR0": self.get_columns_1(),
+            "2-BCDR1": self.get_columns_2(),
+            "3-S-Band": self.get_columns_3(),
+            "4-HKC": self.get_columns_4(),
+            "5-IOBC": self.get_columns_5(),
+            "6-ACS": self.get_columns_6(),
+            "7-ADCS": self.get_columns_7(),
+            "8-ADC_SUB": self.get_columns_8(),
+            "9-Header Board": self.get_columns_9()
+        }
 
-        # UI Elements
-        tk.Label(root, text="Base Folder:").grid(row=0, column=0, padx=10, pady=5)
+        tk.Label(root, text="Base Folder:").grid(row=0, column=0, padx=10, pady=5, sticky="e")
         self.folder_entry = tk.Entry(root, width=50)
-        self.folder_entry.grid(row=0, column=1, padx=10, pady=5)
-        tk.Button(root, text="Browse", command=self.browse_folder).grid(row=0, column=2, padx=10, pady=5)
+        self.folder_entry.grid(row=0, column=1, padx=10, pady=5, sticky="w")
+        tk.Button(root, text="Browse", command=self.browse_folder).grid(row=0, column=2, padx=10, pady=5, sticky="w")
 
-        tk.Label(root, text="Start Year:").grid(row=1, column=0, padx=10, pady=5)
-        self.start_year_entry = tk.Entry(root)
-        self.start_year_entry.grid(row=1, column=1, padx=10, pady=5)
+        # Start & End Year
+        tk.Label(root, text="Start Year:").grid(row=1, column=0, padx=10, pady=5, sticky="e")
+        self.start_year_entry = tk.Entry(root, width=10)
+        self.start_year_entry.grid(row=1, column=1, padx=(0, 10), pady=5, sticky="w")
 
-        tk.Label(root, text="End Year:").grid(row=2, column=0, padx=10, pady=5)
-        self.end_year_entry = tk.Entry(root)
-        self.end_year_entry.grid(row=2, column=1, padx=10, pady=5)
+        tk.Label(root, text="End Year:").grid(row=1, column=2, padx=10, pady=5, sticky="e")
+        self.end_year_entry = tk.Entry(root, width=10)
+        self.end_year_entry.grid(row=1, column=3, padx=(0, 10), pady=5, sticky="w")
 
-        tk.Label(root, text="File Pattern:").grid(row=3, column=0, padx=10, pady=5)
-        self.pattern_combo = ttk.Combobox(root, values=self.file_patterns, state="readonly")
-        self.pattern_combo.grid(row=3, column=1, padx=10, pady=5)
-        self.pattern_combo.set(self.file_patterns[0])  # Ustaw domyślny wybór
+        # File Pattern
+        tk.Label(root, text="File Pattern:").grid(row=2, column=0, padx=10, pady=5, sticky="e")
+        self.pattern_combo = ttk.Combobox(root, values=list(self.pattern_columns.keys()), state="readonly")
+        self.pattern_combo.grid(row=2, column=1, columnspan=2, padx=10, pady=5, sticky="w")
+        self.pattern_combo.set("0-Power Board")
+        self.pattern_combo.bind("<<ComboboxSelected>>", self.update_columns)
 
-        tk.Label(root, text="Select Columns:").grid(row=4, column=0, padx=10, pady=5)
-        self.column_vars = []
-        for i, col in enumerate(self.available_columns):
-            var = tk.BooleanVar()
-            self.column_vars.append(var)
-            tk.Checkbutton(root, text=col, variable=var).grid(row=5+i, column=1, sticky="w")
+        # Select Columns
+        tk.Label(root, text="Select Columns:").grid(row=3, column=0, padx=10, pady=5, sticky="nw")
+        self.column_frame = tk.Frame(root)
+        self.column_frame.grid(row=3, column=1, columnspan=3, padx=10, pady=5, sticky="w")
 
-        tk.Button(root, text="Run Parser", command=self.run_parser).grid(row=12, column=1, padx=10, pady=20)
+        self.column_scrollbar = tk.Scrollbar(self.column_frame, orient="vertical")
+        self.column_listbox = tk.Listbox(self.column_frame, selectmode="multiple",
+                                         yscrollcommand=self.column_scrollbar.set, height=15, width=60)
+        self.column_scrollbar.config(command=self.column_listbox.yview)
+        self.column_scrollbar.pack(side="right", fill="y")
+        self.column_listbox.pack(side="left", fill="both", expand=True)
+
+        # Run Parser
+        tk.Button(root, text="Run Parser", command=self.run_parser).grid(row=4, column=2, padx=10, pady=20)
+
+        # Załaduj domyślne kolumny
+        self.update_columns()
 
     def browse_folder(self):
         folder_selected = filedialog.askdirectory()
         self.folder_entry.delete(0, tk.END)
         self.folder_entry.insert(0, folder_selected)
 
+    def update_columns(self, event=None):
+        self.file_pattern = self.pattern_combo.get()
+        columns = self.pattern_columns[self.file_pattern]
+        self.column_listbox.delete(0, tk.END)  # Wyczyść listę
+        for col in columns:
+            self.column_listbox.insert(tk.END, col)
+
     def run_parser(self):
         self.base_folder = self.folder_entry.get()
         start_year = self.start_year_entry.get()
         end_year = self.end_year_entry.get()
-        self.file_pattern = self.pattern_combo.get()
 
         if not self.base_folder:
             messagebox.showerror("Error", "Please select a base folder")
             return
 
+        # Pobierz wybrane kolumny
+        selected_indices = self.column_listbox.curselection()
+        self.additional_columns = [self.column_listbox.get(i) for i in selected_indices]
+
         try:
-            start_year = int(start_year) if start_year else None
-            end_year = int(end_year) if end_year else None
-
-            self.additional_columns = [col for col, var in zip(self.available_columns, self.column_vars) if var.get()]
-
-            parser = Parser(self.base_folder, self.additional_columns, start_year, end_year)
+            # Przekazanie lat jako string (konwersja na int jest w klasie Parser)
+            parser = Parser(
+                self.base_folder,
+                self.additional_columns,
+                start_year=start_year if start_year else None,
+                end_year=end_year if end_year else None
+            )
             parsed_data = parser.parse_data_no_merging(file_pattern=self.file_pattern)
 
-            # Zapisanie pliku w katalogu roboczym
+            # Zapis pliku wynikowego
             output_file = os.path.join(os.getcwd(), "longDF.csv")
             parsed_data.to_csv(output_file, index=False)
             messagebox.showinfo("Success", f"File saved to: {output_file}")
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {e}")
+
+    def get_columns_0(self):
+        return ["'SStates Loadshed","'SStates Loadshed Latch","'SStates Test Mode","'SStates Magnetometer","'SStates PXFSS","'SStates NXFSS","'SStates PYFSS","'SStates NYFSS","'SStates PZFSS","'SStates NZFSS","'SStates XWheel","'SStates YWheel","'SStates ZWheel","'SStates RateGyro","'SStates MTX","'SStates MTY","'SStates MTZ","'SStates GPS Supply","'SStates 5V Supply","'SStates Spare","'SStates Instrument","'SStates GPS","'SStates BCDR0State","'SStates BCDR1State","'+X Panel Current(mA)","'+Y Panel Current(mA)","'+Z Panel Current(mA)","'-X Panel Current(mA)","'-Y Panel Current(mA)","'-Z Panel Current(mA)","'+X Panel Temperature(°C)","'+Y Panel Temperature(°C)","'+Z Panel Temperature(°C)","'-X Panel Temperature(°C)","'-Y Panel Temperature(°C)","'-Z Panel Temperature(°C)","'Bus Voltage(V)","'Main Switch Current(A)","'5V Rail Voltage(V)","'3V Rail Voltage(V)","'3V Rail Current(mA)","'ADC0 Temperture(°C)","'ADC1 Temperture(°C)","'ADC2 Temperture(°C)","'BCDR0 Battery Voltage(V)","'BCDR1 Battery Voltage(V)","'HKC Current(mA)","'ADCC Current(mA)","'Magnetometer Voltage(V)","'Rate Sensor Voltage(V)","'Rate Sensor Current(mA)","'Sun Sensor Voltage(V)","'Sun Sensor Current(mA)","'Mag. Torquer X Current(mA)","'Mag. Torquer Y Current(mA)","'Mag. Torquer Z Current(mA)","'Wheel Sum Current(mA)","'Wheel X Voltage(V)","'Wheel Y Voltage(V)","'Wheel Z Voltage(V)","'ST Switch Voltage(V)","'ST Switch Current(mA)","'ST Voltage(V)","'ST Current(mA)","'Instrument Voltage(V)","'Instrument Current(mA)","'UHF Rx Current(mA)","'UHF Rx Temperature(°C)","'UHF Rx SSI(V)","'S-Band Tx Voltage(V)","'S-Band Tx Current(A)"]
+
+    def get_columns_1(self):
+        return ["'Reset Reason","'Reset Count","'SEU Count","'Ping Pointer","'Control Pointer","'Battery Temperature(°C)","'Heater On","'Mode","'Bus Voltage(V)","'Battery Voltage(V)","'Battery Current(mA)","'State of Charge(mA*h)","'Bus Target(V)","'Discharge Command"]
+
+    def get_columns_2(self):
+        return ["'Reset Reason","'Reset Count","'SEU Count","'Ping Pointer","'Control Pointer","'Battery Temperature(°C)","'Heater On","'Mode","'Bus Voltage(V)","'Battery Voltage(V)","'Battery Current(mA)","'State of Charge(mA*h)","'Bus Target(V)","'Discharge Command"]
+
+    def get_columns_3(self):
+        return ["'Tx ADC Temperature(°C)","'PA Forward Power(V)","'PA Reverse Power(V)","'PA Control Signal(V)","'3V Analog Supply Current PA(mA)","'5V Supply(V)","'Synthesizer Temperature(°C)","'3V Analog Supply Voltage PA(V)","'Power Amplifier Temperature(°C)","'5V Supply Current(mA)","'3V Analog Supply Current CB(mA)","'3V VCO Supply Current(mA)","'3V Digital Supply Current(mA)","'Synthesizer Lock A(V)","'Synthesizer Lock B(V)","'3V Analog Supply Voltage CB(V)","'3V Digital Supply Voltage CB(V)"]
+
+    def get_columns_4(self):
+        return ["'HKC Temperature(°C)","'Reset Count","'Last Reset Reason"]
+
+    def get_columns_5(self):
+        return ["'TMS470 Video ADC Temperature(°C)","'TMS470 Heater Voltage(V)","'TMS470 +6V(V)","'MAX1231 Temperature(°C)","'MAX1231 H1H (+6V)(V)","'MAX1231 HRH (+1.5V)(V)","'MAX1231 vh+fdh (+8V)(V)","'MAX1231 RDL (+11V)(V)","'MAX1231 RR (+1.5V)(V)","'MAX1231 +15V(V)","'MAX1231 +Sub (+10V)(V)","'MAX1231 +18V(V)","'MAX1231 +5VA(V)","'MAX1231 H1L (-4V)(V)","'MAX1231 ESD (+8V)(V)","'MAX1231 -FDL (-9V)(V)","'MAX1231 HRL (-3.5V)(V)","'MAX1231 OGL (-2.5V)(V)","'MAX1231 -18V(V)","'MAX1231 -5VA(V)","'GPIO GIO Dir A","'GPIO GIO DIn A","'GPIO GIO DOut A","'GPIO HET Dir A","'GPIO HET DIn A","'GPIO HET DOut A","'FPGA Status[0]","'FPGA Status[1]","'IOBC Exception[0]","'IOBC Exception[1]","'IOBC Exception[2]","'IOBC Exception[3]"]
+
+    def get_columns_6(self):
+        return ["'EulerAngleErrors Data[0]","'EulerAngleErrors Data[1]","'EulerAngleErrors Data[2]","'EulerAngleErrors Length","'Mode In","'Mode In","'Mode Out","'Mode Out","'StateVector Data[0]","'StateVector Data[1]","'StateVector Data[2]","'StateVector Data[3]","'StateVector Data[4]","'StateVector Data[5]","'StateVector Data[6]","'StateVector Length","'Chosen FSS","'Current FFS Data[0]","'Current FFS Data[1]","'Current FFS Data[2]","'Current FFS Data[3]","'Current FFS Data[4]","'Current FFS Data[5]","'Current FFS Data[6]","'Cycle Counter","'Gamma","'Useable FSS Data[0]","'Useable FSS Data[1]","'Useable FSS Data[2]","'Useable FSS Data[3]","'Useable FSS Data[4]","'Useable FSS Data[5]","'Useable_FSS Length","'Active Sensors Data[0]","'Active Sensors Data[1]","'Active Sensors Data[2]","'Active Sensors Data[3]","'Active Sensors Length","'Hold Transition","'StatePkp1p Data[0]","'StatePkp1p Data[1]","'StatePkp1p Data[2]","'StatePkp1p Data[3]","'StatePkp1p Data[4]","'StatePkp1p Data[5]","'StatePkp1p Data[6]","'StatePkp1p Length"]
+
+    def get_columns_7(self):
+        return ["'ACS Cycle Count","'ACS Cycle Timeout Count","'ACS Cycle OASYS Count","'ACS State","'ACS SubState[0]","'ACS SubState[1]","'ACS SubState[2]","'ACS SubState[3]","'ACS SubState[4]","'ACS SubState[5]","'ACS SubState[6]","'ACS SubState[7]","'ACS SubState[8]","'ACS SubState[9]","'ACS Error Code","'ACS Device Config Mask","'SS CoarseVoltage 0(V)","'SS Exposure Time 0(ms)","'SS CoarseVoltage 1(V)","'SS Exposure Time 1(ms)","'SS CoarseVoltage 2(V)","'SS Exposure Time 2(ms)","'SS CoarseVoltage 3(V)","'SS Exposure Time 3(ms)","'SS CoarseVoltage 4(V)","'SS Exposure Time 4(ms)","'SS CoarseVoltage 5(V)","'SS Exposure Time 5(ms)","'Wheel Speed[0](rad/s)","'Wheel Speed[1](rad/s)","'Wheel Speed[2](rad/s)","'Magnetometer X","'Magnetometer Y","'Magnetometer Z","'Magnetometer Temperature(°C)","'Rate Sensor X","'Rate Sensor Y","'Rate Sensor Z","'Rate Sensor Temperature(°C)"]
+
+    def get_columns_8(self):
+        return ["'Error Code","'Telemetry WheelSpeed Value[0]","'Telemetry WheelSpeed Value[1]","'Telemetry WheelSpeed Value[2]","'Telemetry WheelSpeed Length","'EKFMon Mag Iterations","'EKFMon Mag Residual Value[0]","'EKFMon Mag Residual Value[1]","'EKFMon Mag Residual Value[2]","'EKFMon Mag Residual Length","'EKFMon Mag Trace P","'EKFMon Fss Iterations","'EKFMon Fss Residual Value[0]","'EKFMon Fss Residual Value[1]","'EKFMon Fss Residual Value[2]","'EKFMon Fss Residual Value[3]","'EKFMon Fss Residual Value[4]","'EKFMon Fss Residual Value[5]","'EKFMon Fss Residual Length","'EKFMon Fss Trace P","'EKFMon RTS Iterations","'EKFMon RTS Residual Value[0]","'EKFMon RTS Residual Value[1]","'EKFMon RTS Residual Value[2]","'EKFMon RTS Residual Length"]
+
+    def get_columns_9(self):
+        return ["'Reset Count File","'Reset Reason File","'Comm Err Count File","'Scrub Index File","'SEU Count File","'Init Pointer File","'Ping Pointer File","'ADC Raw1 File","'ADC Raw2 File","'ADC Raw3 File","'ADC Raw4 File","'PWM Setting File","'PWM Period File","'PWM Controller Pointer File","'PWM Controller Cycle File","'PWM DCycle1 File","'PWM DCycle2 File","'PWM DCycle3 File","'PWM DCycle4 File","'Converted Temp1 File(°C)","'Converted Temp2 File(°C)","'Converted Temp3 File(°C)","'Converted Temp4 File(°C)","'Controller P Gain File","'Controller I Gain File","'Controller D Gain File","'Controller I Max File","'Controller Max DT File","'Controller SetPoint File","'Controller I State File"]
+
 
 if __name__ == "__main__":
     root = tk.Tk()
