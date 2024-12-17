@@ -42,9 +42,14 @@ class Parser:
                         if not all(col in df.columns for col in required_columns):
                             continue
 
+                        # Wybór wymaganych kolumn
                         selected_data = df[required_columns]
-                        data_list.append(selected_data)
-                        total_rows += selected_data.shape[0]
+
+                        # Sortowanie danych po kolumnie 'Date (J2000 mseconds)'
+                        data_sorted = selected_data.sort_values(by=["'Date (J2000 mseconds)"], ascending=True)
+
+                        data_list.append(data_sorted)
+                        total_rows += data_sorted.shape[0]
                     except Exception as e:
                         print(f"Error processing file {file_path}: {e}")
 
