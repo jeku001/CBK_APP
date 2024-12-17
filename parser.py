@@ -1,6 +1,7 @@
 import os
 import time
 import pandas as pd
+
 class Parser:
     def __init__(self, base_folder, additional_columns=None, start_year=None, end_year=None):
         self.base_folder = base_folder
@@ -72,4 +73,3 @@ class Parser:
         long_df["'Date (YYYY-MM-DD HH:MM:SS)"] = pd.to_datetime(long_df["'Date (YYYY-MM-DD HH:MM:SS)"])
         print(f"done")
         return long_df
-

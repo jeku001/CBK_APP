@@ -67,7 +67,6 @@ class App:
         self.column_scrollbar.pack(side="right", fill="y")
         self.column_listbox.pack(side="left", fill="both", expand=True)
 
-        # Run Parser
         tk.Button(root, text="Run Parser", command=self.run_parser, bg="#d4f8d4", activebackground="#b3e6b3").grid(row=6, column=2, padx=10, pady=20)
 
         tk.Button(root, text="Plot Data", command=self.plot_data, bg="#d4f8d4", activebackground="#b3e6b3").grid(row=7, column=2, padx=10, pady=10)
