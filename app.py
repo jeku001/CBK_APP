@@ -30,31 +30,35 @@ class App:
             "9-Header Board": self.get_columns_9()
         }
 
-        tk.Label(root, text="Base Folder:").grid(row=0, column=0, padx=10, pady=5, sticky="e")
+        tk.Label(root, text="Please click Browse to select the 'Parsed' folder with data to begin.", font=("Arial", 10, "bold")).grid(
+            row=0, column=0, columnspan=4, pady=5
+        )
+
+        tk.Label(root, text="Base Folder:").grid(row=1, column=0, padx=10, pady=5, sticky="e")
         self.folder_entry = tk.Entry(root, width=50)
-        self.folder_entry.grid(row=0, column=1, padx=10, pady=5, sticky="w")
-        tk.Button(root, text="Browse", command=self.browse_folder).grid(row=0, column=2, padx=10, pady=5, sticky="w")
+        self.folder_entry.grid(row=1, column=1, padx=10, pady=5, sticky="w")
+        tk.Button(root, text="Browse", command=self.browse_folder).grid(row=1, column=2, padx=10, pady=5, sticky="w")
 
         # Start & End Year
-        tk.Label(root, text="Start Year:").grid(row=1, column=0, padx=10, pady=5, sticky="e")
+        tk.Label(root, text="Start Year:").grid(row=2, column=0, padx=10, pady=5, sticky="e")
         self.start_year_entry = tk.Entry(root, width=10)
-        self.start_year_entry.grid(row=1, column=1, padx=(0, 10), pady=5, sticky="w")
+        self.start_year_entry.grid(row=2, column=1, padx=(0, 10), pady=5, sticky="w")
 
-        tk.Label(root, text="End Year:").grid(row=1, column=2, padx=10, pady=5, sticky="e")
+        tk.Label(root, text="End Year:").grid(row=3, column=0, padx=10, pady=5, sticky="e")
         self.end_year_entry = tk.Entry(root, width=10)
-        self.end_year_entry.grid(row=1, column=3, padx=(0, 10), pady=5, sticky="w")
+        self.end_year_entry.grid(row=3, column=1, padx=(0, 10), pady=5, sticky="w")
 
         # File Pattern
-        tk.Label(root, text="File Pattern:").grid(row=2, column=0, padx=10, pady=5, sticky="e")
+        tk.Label(root, text="File Pattern:").grid(row=4, column=0, padx=10, pady=5, sticky="e")
         self.pattern_combo = ttk.Combobox(root, values=list(self.pattern_columns.keys()), state="readonly")
-        self.pattern_combo.grid(row=2, column=1, columnspan=2, padx=10, pady=5, sticky="w")
+        self.pattern_combo.grid(row=4, column=1, columnspan=2, padx=10, pady=5, sticky="w")
         self.pattern_combo.set("0-Power Board")
         self.pattern_combo.bind("<<ComboboxSelected>>", self.update_columns)
 
         # Select Columns
-        tk.Label(root, text="Select Columns:").grid(row=3, column=0, padx=10, pady=5, sticky="nw")
+        tk.Label(root, text="Select Columns:").grid(row=5, column=0, padx=10, pady=5, sticky="nw")
         self.column_frame = tk.Frame(root)
-        self.column_frame.grid(row=3, column=1, columnspan=3, padx=10, pady=5, sticky="w")
+        self.column_frame.grid(row=5, column=1, columnspan=3, padx=10, pady=5, sticky="w")
 
         self.column_scrollbar = tk.Scrollbar(self.column_frame, orient="vertical")
         self.column_listbox = tk.Listbox(self.column_frame, selectmode="multiple",
@@ -64,16 +68,16 @@ class App:
         self.column_listbox.pack(side="left", fill="both", expand=True)
 
         # Run Parser
-        tk.Button(root, text="Run Parser", command=self.run_parser, bg="#d4f8d4", activebackground="#b3e6b3").grid(row=4, column=2, padx=10, pady=20)
+        tk.Button(root, text="Run Parser", command=self.run_parser, bg="#d4f8d4", activebackground="#b3e6b3").grid(row=6, column=2, padx=10, pady=20)
 
-        tk.Button(root, text="Plot Data", command=self.plot_data, bg="#d4f8d4", activebackground="#b3e6b3").grid(row=5, column=2, padx=10, pady=10)
+        tk.Button(root, text="Plot Data", command=self.plot_data, bg="#d4f8d4", activebackground="#b3e6b3").grid(row=7, column=2, padx=10, pady=10)
 
         tk.Label(root,
                  text="You can select different columns for parsing and plotting without restarting the application.\nRun Parser and Plot Data multiple times for different columns.",
-                 fg="gray").grid(row=6, column=0, columnspan=4, pady=10)
+                 fg="gray").grid(row=8, column=0, columnspan=4, pady=10)
 
         tk.Button(root, text="Exit", command=self.terminate_app, bg="#f8d4d4", activebackground="#e6b3b3").grid(
-            row=7, column=1, columnspan=2, pady=10)
+            row=9, column=1, columnspan=2, pady=10)
 
         # Załaduj domyślne kolumny
         self.update_columns()
