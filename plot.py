@@ -24,4 +24,5 @@ class Plots:
                 plt.grid(True)
 
                 cursor = Cursor(plt.gca(), useblit=True, color='red', linewidth=1)
+                plt.savefig("wykres.pdf", format="pdf")
                 plt.show()
