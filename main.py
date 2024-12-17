@@ -4,20 +4,28 @@ import pandas as pd
 from matplotlib.widgets import Cursor
 from plot import Plots
 from analysis import Analysis
+from parser import Parser
 
 if __name__ == "__main__":
+    base_folder = "/home/jeku/Nextcloud/UAM_BRITE/Lem/WOD/Parsed"
+    additional_columns = [
+        "'HKC Current(mA)",
+        "'ADCC Current(mA)",
+        "'Rate Sensor Current(mA)",
+        "'Sun Sensor Current(mA)",
+        "'Wheel Sum Current(mA)"
+    ]
+    start_year = 2005
+    end_year = 2025
 
-    file_path = "longDF.csv"
-    analyzer = Analysis()
-    #analyzer.sort(file_path)
-    df = pd.read_csv(file_path)
-    df["'Date (YYYY-MM-DD HH:MM:SS)"] = pd.to_datetime(df["'Date (YYYY-MM-DD HH:MM:SS)"])
+    parser = Parser(base_folder, additional_columns, start_year, end_year)
+    parsed_data = parser.parse_data_no_merging()
 
-    analyzer.describe(file_path)
-    analyzer.find_outliers_std(df,"'Sun Sensor Current(mA)", std_threshold = 20, remove=False, view=True, show_date=True)
-    analyzer.find_outliers_roll_ZScore(df, "'Sun Sensor Current(mA)", window = 50, z_threshold=10, remove=False, view=True, show_date=True)
+    output_file = os.path.join(os.getcwd(), "longDF.csv")
+    parsed_data.to_csv(output_file, index=False)
+    print(f"File saved to: {output_file}")
 
-    plotter = Plots()
-    plotter.plot(df)
+
+
 
 #spyder
