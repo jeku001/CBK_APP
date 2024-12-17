@@ -20,7 +20,7 @@ class Plots:
                 plt.title(f'Plot: {column}')
                 plt.xlabel('Time')
                 plt.ylabel('Values')
-                plt.legend()
+                plt.legend(loc="upper right")
                 plt.grid(True)
 
                 cursor = Cursor(plt.gca(), useblit=True, color='red', linewidth=1)
