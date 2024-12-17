@@ -2,6 +2,7 @@ import time
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from parser import Parser
+from plot import Plots
 import os
 
 # Tkinter Application
@@ -9,8 +10,9 @@ class App:
     def __init__(self, root):
         self.root = root
         self.root.title("Data Parser Application")
-        self.base_folder = ""
+        #self.base_folder = ""
         self.file_pattern = "0-Power Board"  # Domyślny wzorzec
+        self.parsed_data = None
         self.additional_columns = []
 
         # Mapowanie wzorców plików na listy kolumn
@@ -63,6 +65,9 @@ class App:
         # Run Parser
         tk.Button(root, text="Run Parser", command=self.run_parser).grid(row=4, column=2, padx=10, pady=20)
 
+        tk.Button(root, text="Plot Data", command=self.plot_data).grid(row=5, column=2, padx=10, pady=10)
+
+
         # Załaduj domyślne kolumny
         self.update_columns()
 
@@ -72,10 +77,10 @@ class App:
         self.folder_entry.insert(0, folder_selected)
 
     def update_columns(self, event=None):
-        self.file_pattern = self.pattern_combo.get()
-        columns = self.pattern_columns[self.file_pattern]
-        self.column_listbox.delete(0, tk.END)  # Wyczyść listę
-        for col in columns:
+        self.column_listbox.delete(0, tk.END)  # Wyczyść Listbox
+        selected_pattern = self.pattern_combo.get()  # Pobierz wybrany wzorzec
+        columns = self.pattern_columns.get(selected_pattern, [])  # Pobierz kolumny dla wzorca
+        for col in columns:  # Dodaj kolumny do Listbox
             self.column_listbox.insert(tk.END, col)
 
     def run_parser(self):
@@ -99,11 +104,12 @@ class App:
                 start_year=start_year if start_year else None,
                 end_year=end_year if end_year else None
             )
-            parsed_data = parser.parse_data_no_merging(file_pattern=self.file_pattern)
+            self.parsed_data = parser.parse_data_no_merging(self.file_pattern)
+
 
             # Zapis pliku wynikowego
             output_file = os.path.join(os.getcwd(), "longDF.csv")
-            parsed_data.to_csv(output_file, index=False)
+            self.parsed_data.to_csv(output_file, index=False)
             messagebox.showinfo("Success", f"File saved to: {output_file}")
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {e}")
@@ -138,6 +144,15 @@ class App:
     def get_columns_9(self):
         return ["'Reset Count File","'Reset Reason File","'Comm Err Count File","'Scrub Index File","'SEU Count File","'Init Pointer File","'Ping Pointer File","'ADC Raw1 File","'ADC Raw2 File","'ADC Raw3 File","'ADC Raw4 File","'PWM Setting File","'PWM Period File","'PWM Controller Pointer File","'PWM Controller Cycle File","'PWM DCycle1 File","'PWM DCycle2 File","'PWM DCycle3 File","'PWM DCycle4 File","'Converted Temp1 File(°C)","'Converted Temp2 File(°C)","'Converted Temp3 File(°C)","'Converted Temp4 File(°C)","'Controller P Gain File","'Controller I Gain File","'Controller D Gain File","'Controller I Max File","'Controller Max DT File","'Controller SetPoint File","'Controller I State File"]
 
+    def plot_data(self):
+        if self.parsed_data is None or self.parsed_data.empty:
+            messagebox.showerror("Error", "No data to plot. Please run the parser first.")
+            return
+        selected_indices = self.column_listbox.curselection()
+        selected_columns = [self.column_listbox.get(i) for i in selected_indices]
+
+        plots = Plots()
+        plots.plot(self.parsed_data, selected_columns)
 
 if __name__ == "__main__":
     root = tk.Tk()
