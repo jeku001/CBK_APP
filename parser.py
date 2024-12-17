@@ -62,9 +62,14 @@ class Parser:
         else:
             long_df = pd.DataFrame(columns=required_columns)  # required_columns jest teraz zawsze zainicjalizowane
 
+
         end_time = time.time()
         print(f"Processing completed in {end_time - start_time:.2f} seconds")
         print(f"Total rows processed: {total_rows}")
-
+        print(f"sorting data")
+        long_df = long_df.sort_values(by=["'Date (J2000 mseconds)"], ascending=True)
+        print(f"changing to datetime type")
+        long_df["'Date (YYYY-MM-DD HH:MM:SS)"] = pd.to_datetime(long_df["'Date (YYYY-MM-DD HH:MM:SS)"])
+        print(f"done")
         return long_df
 
