@@ -79,6 +79,14 @@ class App:
 
         tk.Button(root, text="Run Parser", command=self.run_parser, bg="#d4f8d4", activebackground="#b3e6b3").grid(row=6, column=2, padx=10, pady=20)
 
+        self.download_button = tk.Button(root, text="Download Parsed File", command=self.download_parsed_file,
+                                         bg="#d4f8d4", activebackground="#b3e6b3", state="disabled")
+        self.download_button.grid(row=6, column=1, padx=10, pady=20)
+
+        tk.Label(root,
+                 text="You can plot data without downloading",
+                 fg="gray").grid(row=7, column=1, columnspan=1, pady=10)
+
         tk.Button(root, text="Plot Data", command=self.plot_data, bg="#d4f8d4", activebackground="#b3e6b3").grid(row=7, column=2, padx=10, pady=10)
 
         tk.Label(root,
@@ -133,11 +141,29 @@ class App:
             )
             self.parsed_data = parser.parse_data_no_merging(self.file_pattern)
 
-            output_file = os.path.join(os.getcwd(), "longDF.csv")
-            self.parsed_data.to_csv(output_file, index=False)
-            messagebox.showinfo("Success", f"File saved to: {output_file}")
+            messagebox.showinfo("Success",
+                                "Data parsed successfully. You can now download the parsed file or plot the data.")
+
+            # Aktywuj przycisk "Download Parsed File"
+            self.download_button.config(state="normal")
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {e}")
+
+    def download_parsed_file(self):
+        if self.parsed_data is not None and not self.parsed_data.empty:
+            output_file = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                title="Save Parsed File"
+            )
+            if output_file:
+                try:
+                    self.parsed_data.to_csv(output_file, index=False)
+                    messagebox.showinfo("Success", f"File saved to: {output_file}")
+                except Exception as e:
+                    messagebox.showerror("Error", f"An error occurred while saving the file: {e}")
+        else:
+            messagebox.showerror("Error", "No data available to download.")
 
     def get_columns_0(self):
         return ["'SStates Loadshed","'SStates Loadshed Latch","'SStates Test Mode","'SStates Magnetometer","'SStates PXFSS","'SStates NXFSS","'SStates PYFSS","'SStates NYFSS","'SStates PZFSS","'SStates NZFSS","'SStates XWheel","'SStates YWheel","'SStates ZWheel","'SStates RateGyro","'SStates MTX","'SStates MTY","'SStates MTZ","'SStates GPS Supply","'SStates 5V Supply","'SStates Spare","'SStates Instrument","'SStates GPS","'SStates BCDR0State","'SStates BCDR1State","'+X Panel Current(mA)","'+Y Panel Current(mA)","'+Z Panel Current(mA)","'-X Panel Current(mA)","'-Y Panel Current(mA)","'-Z Panel Current(mA)","'+X Panel Temperature(°C)","'+Y Panel Temperature(°C)","'+Z Panel Temperature(°C)","'-X Panel Temperature(°C)","'-Y Panel Temperature(°C)","'-Z Panel Temperature(°C)","'Bus Voltage(V)","'Main Switch Current(A)","'5V Rail Voltage(V)","'3V Rail Voltage(V)","'3V Rail Current(mA)","'ADC0 Temperture(°C)","'ADC1 Temperture(°C)","'ADC2 Temperture(°C)","'BCDR0 Battery Voltage(V)","'BCDR1 Battery Voltage(V)","'HKC Current(mA)","'ADCC Current(mA)","'Magnetometer Voltage(V)","'Rate Sensor Voltage(V)","'Rate Sensor Current(mA)","'Sun Sensor Voltage(V)","'Sun Sensor Current(mA)","'Mag. Torquer X Current(mA)","'Mag. Torquer Y Current(mA)","'Mag. Torquer Z Current(mA)","'Wheel Sum Current(mA)","'Wheel X Voltage(V)","'Wheel Y Voltage(V)","'Wheel Z Voltage(V)","'ST Switch Voltage(V)","'ST Switch Current(mA)","'ST Voltage(V)","'ST Current(mA)","'Instrument Voltage(V)","'Instrument Current(mA)","'UHF Rx Current(mA)","'UHF Rx Temperature(°C)","'UHF Rx SSI(V)","'S-Band Tx Voltage(V)","'S-Band Tx Current(A)"]
