@@ -57,15 +57,25 @@ class App:
 
         # Select Columns
         tk.Label(root, text="Select Columns:").grid(row=5, column=0, padx=10, pady=5, sticky="nw")
+
         self.column_frame = tk.Frame(root)
         self.column_frame.grid(row=5, column=1, columnspan=3, padx=10, pady=5, sticky="w")
 
-        self.column_scrollbar = tk.Scrollbar(self.column_frame, orient="vertical")
-        self.column_listbox = tk.Listbox(self.column_frame, selectmode="multiple",
-                                         yscrollcommand=self.column_scrollbar.set, height=15, width=60)
-        self.column_scrollbar.config(command=self.column_listbox.yview)
-        self.column_scrollbar.pack(side="right", fill="y")
-        self.column_listbox.pack(side="left", fill="both", expand=True)
+        # Dodanie scrollowalnego obszaru dla checkboxów
+        self.canvas = tk.Canvas(self.column_frame, width=400, height=200)
+        self.scrollbar = tk.Scrollbar(self.column_frame, orient="vertical", command=self.canvas.yview)
+        self.scrollable_frame = tk.Frame(self.canvas)
+
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        )
+
+        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.scrollbar.pack(side="right", fill="y")
 
         tk.Button(root, text="Run Parser", command=self.run_parser, bg="#d4f8d4", activebackground="#b3e6b3").grid(row=6, column=2, padx=10, pady=20)
 
@@ -87,11 +97,20 @@ class App:
         self.folder_entry.insert(0, folder_selected)
 
     def update_columns(self, event=None):
-        self.column_listbox.delete(0, tk.END)  # Wyczyść Listbox
+        # Wyczyść istniejące elementy w scrollable_frame
+        for widget in self.scrollable_frame.winfo_children():
+            widget.destroy()
+
         selected_pattern = self.pattern_combo.get()  # Pobierz wybrany wzorzec
         columns = self.pattern_columns.get(selected_pattern, [])  # Pobierz kolumny dla wzorca
-        for col in columns:  # Dodaj kolumny do Listbox
-            self.column_listbox.insert(tk.END, col)
+        self.column_checkboxes = {}  # Słownik do przechowywania stanu checkboxów
+
+        # Dodaj checkboxy dla każdej kolumny
+        for col in columns:
+            var = tk.BooleanVar(value=False)
+            chk = tk.Checkbutton(self.scrollable_frame, text=col, variable=var, anchor="w", width=50)
+            chk.pack(fill="x", pady=1)
+            self.column_checkboxes[col] = var
 
     def run_parser(self):
         self.base_folder = self.folder_entry.get()
@@ -102,12 +121,10 @@ class App:
             messagebox.showerror("Error", "Please select a base folder")
             return
 
-        # Pobierz wybrane kolumny
-        selected_indices = self.column_listbox.curselection()
-        self.additional_columns = [self.column_listbox.get(i) for i in selected_indices]
+        # Pobierz wybrane kolumny z checkboxów
+        self.additional_columns = [col for col, var in self.column_checkboxes.items() if var.get()]
 
         try:
-            # Przekazanie lat jako string (konwersja na int jest w klasie Parser)
             parser = Parser(
                 self.base_folder,
                 self.additional_columns,
@@ -116,8 +133,6 @@ class App:
             )
             self.parsed_data = parser.parse_data_no_merging(self.file_pattern)
 
-
-            # Zapis pliku wynikowego
             output_file = os.path.join(os.getcwd(), "longDF.csv")
             self.parsed_data.to_csv(output_file, index=False)
             messagebox.showinfo("Success", f"File saved to: {output_file}")
