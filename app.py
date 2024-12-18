@@ -34,6 +34,10 @@ class App:
             row=0, column=0, columnspan=4, pady=5
         )
 
+        # Status Label
+        self.status_label = tk.Label(root, text="Ready", fg="blue", font=("Arial", 10, "italic"))
+        self.status_label.grid(row=10, column=0, columnspan=4, pady=5)
+
         tk.Label(root, text="Base Folder:").grid(row=1, column=0, padx=10, pady=5, sticky="e")
         self.folder_entry = tk.Entry(root, width=50)
         self.folder_entry.grid(row=1, column=1, padx=10, pady=5, sticky="w")
@@ -129,10 +133,12 @@ class App:
             messagebox.showerror("Error", "Please select a base folder")
             return
 
-        # Pobierz wybrane kolumny z checkboxów
         self.additional_columns = [col for col, var in self.column_checkboxes.items() if var.get()]
 
         try:
+            self.status_label.config(text="Parsing data...", fg="orange")
+            self.root.update_idletasks()
+
             parser = Parser(
                 self.base_folder,
                 self.additional_columns,
@@ -141,12 +147,15 @@ class App:
             )
             self.parsed_data = parser.parse_data_no_merging(self.file_pattern)
 
+            # Użycie atrybutów `start_time` i `end_time`
+            elapsed_time = parser.end_time - parser.start_time
+            self.status_label.config(text=f"Parsing completed in {elapsed_time:.2f} seconds.", fg="green")
+
             messagebox.showinfo("Success",
                                 "Data parsed successfully. You can now download the parsed file or plot the data.")
-
-            # Aktywuj przycisk "Download Parsed File"
             self.download_button.config(state="normal")
         except Exception as e:
+            self.status_label.config(text="Parsing failed.", fg="red")
             messagebox.showerror("Error", f"An error occurred: {e}")
 
     def download_parsed_file(self):
