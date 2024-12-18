@@ -2,6 +2,7 @@ import os
 import time
 import pandas as pd
 
+
 class Parser:
     def __init__(self, base_folder, additional_columns=None, start_year=None, end_year=None):
         self.base_folder = base_folder

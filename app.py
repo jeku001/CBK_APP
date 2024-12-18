@@ -34,9 +34,6 @@ class App:
             row=0, column=0, columnspan=4, pady=5
         )
 
-        # Status Label
-        self.status_label = tk.Label(root, text="Ready", fg="blue", font=("Arial", 10, "italic"))
-        self.status_label.grid(row=10, column=0, columnspan=4, pady=5)
 
         tk.Label(root, text="Base Folder:").grid(row=1, column=0, padx=10, pady=5, sticky="e")
         self.folder_entry = tk.Entry(root, width=50)
@@ -95,18 +92,33 @@ class App:
 
         tk.Label(root,
                  text="You can select different columns for parsing and plotting without restarting the application.\nRun Parser and Plot Data multiple times for different columns.",
-                 fg="gray").grid(row=8, column=0, columnspan=4, pady=10)
+                 fg="gray").grid(row=9, column=0, columnspan=4, pady=10)
 
         tk.Button(root, text="Exit", command=self.terminate_app, bg="#f8d4d4", activebackground="#e6b3b3").grid(
-            row=9, column=1, columnspan=2, pady=10)
+            row=10, column=1, columnspan=2, pady=10)
+
+        # Status Label
+        self.status_label = tk.Label(root, text="Ready", fg="blue", font=("Arial", 10, "italic"))
+        self.status_label.grid(row=6, column=0, columnspan=1, pady=5)
+
+        # Opcje wyboru rodzaju wykresu
+        self.plot_type = tk.StringVar(value="linear")  # Domyślnie "linear"
+        linear_button = tk.Radiobutton(root, text="Linear", variable=self.plot_type, value="linear")
+        linear_button.grid(row=8, column=1, padx=6, pady=5, sticky="e")
+        log_button = tk.Radiobutton(root, text="Logarithmic", variable=self.plot_type, value="log")
+        log_button.grid(row=8, column=2, padx=6, pady=5, sticky="e")
 
         # Załaduj domyślne kolumny
         self.update_columns()
 
     def browse_folder(self):
-        folder_selected = filedialog.askdirectory()
-        self.folder_entry.delete(0, tk.END)
-        self.folder_entry.insert(0, folder_selected)
+        # Get the parent directory of the current script location
+        parent_dir = os.path.dirname(os.getcwd())
+        # Open the directory selection dialog starting from parent_dir
+        folder_selected = filedialog.askdirectory(initialdir=parent_dir, title="Select Folder")
+        if folder_selected:
+            self.folder_entry.delete(0, tk.END)
+            self.folder_entry.insert(0, folder_selected)
 
     def update_columns(self, event=None):
         # Wyczyść istniejące elementy w scrollable_frame
@@ -204,7 +216,7 @@ class App:
     def get_columns_9(self):
         return ["'Reset Count File","'Reset Reason File","'Comm Err Count File","'Scrub Index File","'SEU Count File","'Init Pointer File","'Ping Pointer File","'ADC Raw1 File","'ADC Raw2 File","'ADC Raw3 File","'ADC Raw4 File","'PWM Setting File","'PWM Period File","'PWM Controller Pointer File","'PWM Controller Cycle File","'PWM DCycle1 File","'PWM DCycle2 File","'PWM DCycle3 File","'PWM DCycle4 File","'Converted Temp1 File(°C)","'Converted Temp2 File(°C)","'Converted Temp3 File(°C)","'Converted Temp4 File(°C)","'Controller P Gain File","'Controller I Gain File","'Controller D Gain File","'Controller I Max File","'Controller Max DT File","'Controller SetPoint File","'Controller I State File"]
 
-    def confirm_and_plot(self, window, column_listbox):
+    def confirm_and_plot(self, window, column_listbox, plot_type):
         selected_indices = column_listbox.curselection()
         selected_columns = [column_listbox.get(i) for i in selected_indices]
 
@@ -216,12 +228,14 @@ class App:
 
         # Generowanie wykresu dla wybranych kolumn
         plots = Plots()
-        plots.plot(self.parsed_data, selected_columns)
+        plots.plot(self.parsed_data, selected_columns, plot_type)
 
     def plot_data(self):
         if self.parsed_data is None or self.parsed_data.empty:
             messagebox.showerror("Error", "No data to plot. Please run the parser first.")
             return
+
+        plot_type = self.plot_type.get()
 
         # Tworzenie nowego okna dialogowego
         plot_window = tk.Toplevel(self.root)
@@ -240,7 +254,7 @@ class App:
 
         # Przycisk do potwierdzenia
         tk.Button(plot_window, text="Plot Selected",
-                  command=lambda: self.confirm_and_plot(plot_window, column_listbox)).pack(pady=5)
+                  command=lambda: self.confirm_and_plot(plot_window, column_listbox, plot_type)).pack(pady=5)
 
     def plot_loop(self):
         def plot_and_show_options():
