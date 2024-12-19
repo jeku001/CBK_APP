@@ -3,6 +3,7 @@ import time
 import pandas as pd
 from concurrent.futures import ProcessPoolExecutor
 
+
 class Parser:
     def __init__(self, base_folder, additional_columns=None, start_year=None, end_year=None, workers=1):
         self.base_folder = base_folder
@@ -24,24 +25,28 @@ class Parser:
             return pd.DataFrame(columns=required_columns)
 
     def parse_data_no_merging(self, file_pattern="0-Power Board"):
-        self.start_time = time.time()  # start time
+        self.start_time = time.time()  # start time całego procesu
         required_columns = [
-            "'Date (YYYY-MM-DD HH:MM:SS)",
-            "'Date Millisecond Offset",
-            "'Date (J2000 mseconds)"
-        ] + self.additional_columns
+                               "'Date (YYYY-MM-DD HH:MM:SS)",
+                               "'Date Millisecond Offset",
+                               "'Date (J2000 mseconds)"
+                           ] + self.additional_columns
 
         if self.start_year is not None:
             self.start_year = int(self.start_year)
         if self.end_year is not None:
             self.end_year = int(self.end_year)
 
+        # Start pomiaru czasu skanowania plików
+        scan_start_time = time.time()
+
         files_to_process = []
         for root, dirs, files in os.walk(self.base_folder):
             folder_name = os.path.basename(root)
             if len(folder_name) >= 4 and folder_name[:4].isdigit():
                 folder_year = int(folder_name[:4])
-                if (self.start_year and folder_year < self.start_year) or (self.end_year and folder_year > self.end_year):
+                if (self.start_year and folder_year < self.start_year) or (
+                        self.end_year and folder_year > self.end_year):
                     dirs[:] = []
                     continue
 
@@ -50,18 +55,35 @@ class Parser:
                     file_path = os.path.join(root, file)
                     files_to_process.append(file_path)
 
+        # Koniec pomiaru czasu skanowania
+        scan_end_time = time.time()
+        scan_duration = scan_end_time - scan_start_time
+        print(f"File scanning completed in {scan_duration:.2f} seconds")
+        print(f"Found {len(files_to_process)} files to process.")
+
         data_list = []
+
+        # Przetwarzanie wielowątkowe lub jednoprocesowe
         if self.workers > 1:
+            print("Starting multi-process parsing...")
+            processed_count = 0
             with ProcessPoolExecutor(max_workers=self.workers) as executor:
-                results = executor.map(self.parse_single_file, files_to_process, [required_columns]*len(files_to_process))
+                results = executor.map(self.parse_single_file, files_to_process,
+                                       [required_columns] * len(files_to_process))
                 for res_df in results:
                     if not res_df.empty:
                         data_list.append(res_df)
+                    processed_count += 1
+                    print(f"Processed {processed_count}/{len(files_to_process)} files...")
         else:
+            print("Starting single-process parsing...")
+            processed_count = 0
             for fpath in files_to_process:
                 res_df = self.parse_single_file(fpath, required_columns)
                 if not res_df.empty:
                     data_list.append(res_df)
+                processed_count += 1
+                print(f"Processed {processed_count}/{len(files_to_process)} files...")
 
         if data_list:
             long_df = pd.concat(data_list, ignore_index=True)
@@ -73,5 +95,7 @@ class Parser:
             long_df["'Date (YYYY-MM-DD HH:MM:SS)"] = pd.to_datetime(long_df["'Date (YYYY-MM-DD HH:MM:SS)"])
 
         self.end_time = time.time()
-        print(f"Processing completed in {self.end_time - self.start_time:.2f} seconds")
+        total_duration = self.end_time - self.start_time
+        print(f"Processing completed in {total_duration:.2f} seconds (including file scanning).")
+
         return long_df
