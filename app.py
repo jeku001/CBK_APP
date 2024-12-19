@@ -386,6 +386,9 @@ class App:
 
 
 if __name__ == "__main__":
+    import multiprocessing
+    multiprocessing.freeze_support()
+
     root = tk.Tk()
     app = App(root)
     root.mainloop()
