@@ -1,16 +1,45 @@
+# Data Parser and Plotting Application
+
+## Table of Contents
+- [Overview](#overview)
+- [Installation](#installation)
+- [Using the Application](#using-the-application)
+  - [Step 1: Loading Data](#step-1-loading-data)
+  - [Step 2: Configuring the Parser](#step-2-configuring-the-parser)
+  - [Step 3: Running the Parser](#step-3-running-the-parser)
+  - [Step 4: Plotting Data](#step-4-plotting-data)
+  - [Optional: Saving Parsed Data](#optional-saving-parsed-data)
+- [Data Source and Structure](#data-source-and-structure)
+- [Acknowledgements](#acknowledgements)
+
+---
+
+## Overview
+This application is designed to help Scientists from the polish Space Research Centre efficiently process housekeeping datasets from the *LEM* and *HEWELIUSZ* satellites. The primary goal is to enable the extraction and visualization of specific data columns from CSV files containing over 30GB of satellite telemetry data.
+
+Key features include:
+- Parsing and filtering CSV data based on selected columns.
+- Support for single-process and multi-process data processing.
+- Interactive plotting with linear and logarithmic scales.
+- User-friendly interface for quick navigation and data handling.
+
+---
+
+### Source of Data
+The data originates from the LEM and HEWELIUSZ satellites, launched as part of a collaborative project to collect telemetry data. However, due to confidentiality agreements, the raw data cannot be made publicly available.
+
+- **LEM Satellite**: A Polish satellite launched in 2013, primarily designed for stellar photometry and astrophysical observations.
+- **HEWELIUSZ Satellite**: Launched in 2014, HEWELIUSZ complements LEM's mission, with additional capabilities for space environment monitoring. The dataset spans from their launch dates to the present, amounting to over 30GB of CSV files.
+
+
+### Data Format
+The files are organized in a hierarchical structure. For example:
+base_folder/ ├── 2020-01/ │ ├── 2020-01-01/ │ │ ├── 0-Power Board-20200101.csv │ │ ├── 1-BCDR0-20200101.csv │ │ └── ... │ ├── 2020-01-02/ │ │ ├── 0-Power Board-20200102.csv │ │ └── ... │ └── ... ├── 2020-02/ │ └── ...
 
 Each file contains time-series data with columns such as:
 - `'Date (YYYY-MM-DD HH:MM:SS)`': Timestamp of the data.
 - `'Date (J2000 mseconds)`': Time in milliseconds since J2000 epoch.
 - Specific housekeeping parameters (e.g., temperatures, reset reasons).
-
-### Examples of Parameters
-- **LEM Satellite**:
-  - `'SStates Loadshed'`
-  - `'Tx ADC Temperature(°C)`'
-- **HEWELIUSZ Satellite**:
-  - `'EulerAngleErrors Data[0]'`
-  - `'Telemetry WheelSpeed Value[0]`'
 
 ---
 
@@ -21,14 +50,12 @@ To run the application, follow these steps:
    - Obtain the `app.exe` file for Windows or `app` for Linux, located in the `win_app` and `linux_app` directories respectively.
 
 2. **Run the executable**
-   - For Windows, double-click `app.exe` to launch the application.
-   - For Linux, navigate to the `linux_app` directory and run `./app` from the terminal.
+   - double-click `app.exe` or 'app' to launch the application.
 
 3. **System Requirements**
-   - Windows 8 or later, or a modern Linux distribution (e.g., Ubuntu 20.04+).
    - At least 8GB of RAM (recommended for larger datasets).
-   - Python 3.9+ with `matplotlib` and `pandas` installed (if using the source code).
-
+   - A quad-core processor (4 cores) or higher is recommended for efficient parallel processing.
+   - 
 ---
 
 ## Using the Application
@@ -51,12 +78,12 @@ To run the application, follow these steps:
 3. Once completed, the parsed data will be ready for plotting or saving.
 
 ### Step 4: Plotting Data
-1. Click **Plot Data** to open the column selection window. The plot is interactive and allows zooming without losing quality.
+1. Click **Plot Data** to open the column selection window.
 2. Choose one or more columns to plot.
 3. Select a scale:
    - **Linear**: Standard scale.
    - **Logarithmic**: For data with a wide range of values.
-4. View the interactive plot. Use the red cursor to inspect specific points.
+4. View the interactive plot. Use the red cursor to inspect specific points or zoom it without losing quality.
 
 ### Optional: Saving Parsed Data
 1. Click **Save Parsed File** to export the parsed data as a CSV file.
@@ -65,6 +92,6 @@ To run the application, follow these steps:
 ---
 
 ## Acknowledgements
-This tool was developed to simplify the analysis of satellite telemetry data and is part of a portfolio of projects designed for scientific applications. Special thanks to the teams behind LEM and HEWELIUSZ for their contributions to satellite telemetry.
+This tool was developed to simplify the analysis of satellite telemetry data. Special thanks to the teams behind LEM and HEWELIUSZ for providing invaluable satellite telemetry data.
 
-For further inquiries or bug reports, please contact [your_email@example.com].
+For further inquiries or bug reports, please contact [jedrzejslupski@gmail.com].
