@@ -24,7 +24,7 @@ class Parser:
             print(f"Error processing file {file_path}: {e}")
             return pd.DataFrame(columns=required_columns)
 
-    def parse_data_no_merging(self, file_pattern="0-Power Board"):
+    def parse_data_no_merging(self, file_pattern="0-Power Board", progress_callback=None):
         self.start_time = time.time()  # start time całego procesu
         required_columns = [
                                "'Date (YYYY-MM-DD HH:MM:SS)",
@@ -37,7 +37,6 @@ class Parser:
         if self.end_year is not None:
             self.end_year = int(self.end_year)
 
-        # Start pomiaru czasu skanowania plików
         scan_start_time = time.time()
 
         files_to_process = []
@@ -55,26 +54,28 @@ class Parser:
                     file_path = os.path.join(root, file)
                     files_to_process.append(file_path)
 
-        # Koniec pomiaru czasu skanowania
         scan_end_time = time.time()
         scan_duration = scan_end_time - scan_start_time
         print(f"File scanning completed in {scan_duration:.2f} seconds")
         print(f"Found {len(files_to_process)} files to process.")
 
         data_list = []
+        total_files = len(files_to_process)
 
-        # Przetwarzanie wielowątkowe lub jednoprocesowe
         if self.workers > 1:
             print("Starting multi-process parsing...")
             processed_count = 0
             with ProcessPoolExecutor(max_workers=self.workers) as executor:
                 results = executor.map(self.parse_single_file, files_to_process,
-                                       [required_columns] * len(files_to_process))
+                                       [required_columns] * total_files)
                 for res_df in results:
                     if not res_df.empty:
                         data_list.append(res_df)
                     processed_count += 1
-                    print(f"Processed {processed_count}/{len(files_to_process)} files...")
+                    # Wywołanie callbacka po przetworzeniu pliku
+                    if progress_callback:
+                        progress_callback(processed_count, total_files)
+                    print(f"Processed {processed_count}/{total_files} files...")
         else:
             print("Starting single-process parsing...")
             processed_count = 0
@@ -83,7 +84,10 @@ class Parser:
                 if not res_df.empty:
                     data_list.append(res_df)
                 processed_count += 1
-                print(f"Processed {processed_count}/{len(files_to_process)} files...")
+                # Wywołanie callbacka po przetworzeniu pliku
+                if progress_callback:
+                    progress_callback(processed_count, total_files)
+                print(f"Processed {processed_count}/{total_files} files...")
 
         if data_list:
             long_df = pd.concat(data_list, ignore_index=True)

@@ -30,33 +30,33 @@ class App:
             "9-Header Board": self.get_columns_9()
         }
 
-        tk.Label(root, text="Please click Browse to select the 'Parsed' folder with data to begin.", font=("Arial", 10, "bold")).grid(
+        tk.Label(root, text="Please click Browse to select the 'WOD/Parsed' folder with data to begin.", font=("Arial", 10, "bold")).grid(
             row=0, column=0, columnspan=4, pady=5
         )
 
 
-        tk.Label(root, text="Base Folder:").grid(row=1, column=0, padx=10, pady=5, sticky="e")
+        tk.Label(root, text="Base Folder").grid(row=1, column=0, padx=10, pady=5, sticky="e")
         self.folder_entry = tk.Entry(root, width=50)
         self.folder_entry.grid(row=1, column=1, padx=10, pady=5, sticky="w")
         tk.Button(root, text="Browse", command=self.browse_folder).grid(row=1, column=2, padx=10, pady=5, sticky="w")
 
         # Start & End Year
-        tk.Label(root, text="Start Year:").grid(row=2, column=0, padx=10, pady=5, sticky="e")
+        tk.Label(root, text="Start Year").grid(row=2, column=0, padx=10, pady=5, sticky="e")
         self.start_year_entry = tk.Entry(root, width=10)
         self.start_year_entry.grid(row=2, column=1, padx=(0, 10), pady=5, sticky="w")
 
-        tk.Label(root, text="End Year:").grid(row=3, column=0, padx=10, pady=5, sticky="e")
+        tk.Label(root, text="End Year").grid(row=3, column=0, padx=10, pady=5, sticky="e")
         self.end_year_entry = tk.Entry(root, width=10)
         self.end_year_entry.grid(row=3, column=1, padx=(0, 10), pady=5, sticky="w")
 
         # File Pattern
-        tk.Label(root, text="File Pattern:").grid(row=4, column=0, padx=10, pady=5, sticky="e")
+        tk.Label(root, text="File Pattern").grid(row=4, column=0, padx=10, pady=5, sticky="e")
         self.pattern_combo = ttk.Combobox(root, values=list(self.pattern_columns.keys()), state="readonly")
         self.pattern_combo.grid(row=4, column=1, columnspan=2, padx=10, pady=5, sticky="w")
         self.pattern_combo.set("0-Power Board")
         self.pattern_combo.bind("<<ComboboxSelected>>", self.on_pattern_selected)
 
-        tk.Label(root, text="Select Columns:").grid(row=5, column=0, padx=10, pady=5, sticky="nw")
+        tk.Label(root, text="Select Columns").grid(row=5, column=0, padx=10, pady=5, sticky="nw")
 
         self.column_frame = tk.Frame(root)
         self.column_frame.grid(row=5, column=1, columnspan=3, padx=10, pady=5, sticky="w")
@@ -77,30 +77,30 @@ class App:
         self.scrollbar.pack(side="right", fill="y")
 
         self.mode_var = tk.StringVar(value="single")
-        tk.Label(root, text="Processing Mode:").grid(row=6, column=0, padx=10, pady=5, sticky="e")
+        tk.Label(root, text="Processing Mode").grid(row=6, column=0, padx=10, pady=5, sticky="e")
         single_radio = tk.Radiobutton(root, text="Single-process mode", variable=self.mode_var, value="single", command=self.toggle_workers)
         single_radio.grid(row=6, column=1, sticky="w")
         multi_radio = tk.Radiobutton(root, text="parallel processing mode", variable=self.mode_var, value="multi", command=self.toggle_workers)
         multi_radio.grid(row=7, column=1, sticky="w")
 
-        tk.Label(root, text="Parallel tasks:").grid(row=8, column=0, padx=10, pady=5, sticky="e")
+        tk.Label(root, text="Parallel tasks").grid(row=8, column=0, padx=10, pady=5, sticky="e")
         self.workers_spin = tk.Spinbox(root, from_=1, to=32, width=5, state="disabled")
         self.workers_spin.grid(row=8, column=1, padx=10, pady=5, sticky="w")
 
-        tk.Button(root, text="Run Parser", command=self.run_parser, bg="#d4f8d4", activebackground="#b3e6b3").grid(row=6, column=2, padx=10, pady=20)
+        tk.Button(root, text="Run Parser", command=self.run_parser, bg="#d4f8d4", activebackground="#b3e6b3").grid(row=9, column=0, padx=10, pady=20, sticky="e")
 
-        self.download_button = tk.Button(root, text="Download Parsed File", command=self.download_parsed_file,
+        self.download_button = tk.Button(root, text="save parsed File", command=self.download_parsed_file,
                                          bg="#d4f8d4", activebackground="#b3e6b3", state="disabled")
         self.download_button.grid(row=8, column=2, padx=10, pady=20)
 
         tk.Label(root,
-                 text="You can plot data without downloading",
+                 text="You can plot data without saving",
                  fg="gray").grid(row=7, column=2, columnspan=1, pady=10)
 
         tk.Button(root, text="Plot Data", command=self.plot_data, bg="#d4f8d4", activebackground="#b3e6b3").grid(row=9, column=2, padx=10, pady=10)
 
-        self.status_label = tk.Label(root, text="Ready", fg="blue", font=("Arial", 10, "italic"))
-        self.status_label.grid(row=5, column=2, columnspan=1, pady=5)
+        self.status_label = tk.Label(root, text="", fg="blue", font=("Arial", 10, "italic"))
+        self.status_label.grid(row=9, column=0, columnspan=2, pady=2, sticky="n")
 
         self.plot_type = tk.StringVar(value="linear")  # Domyślnie "linear"
         linear_button = tk.Radiobutton(root, text="Linear", variable=self.plot_type, value="linear")
@@ -110,10 +110,19 @@ class App:
 
         tk.Label(root,
                  text="You can select different columns for parsing and plotting without restarting the application.\nRun Parser and Plot Data multiple times for different columns.",
-                 fg="gray").grid(row=11, column=0, columnspan=4, pady=10)
+                 fg="gray").grid(row=13, column=0, columnspan=4, pady=10)
 
         tk.Button(root, text="Exit", command=self.terminate_app, bg="#f8d4d4", activebackground="#e6b3b3").grid(
-            row=12, column=1, columnspan=2, pady=10)
+            row=14, column=1, columnspan=2, pady=10)
+
+        # Definicja paska postępu
+        self.progress_var = tk.DoubleVar()
+        self.progress_bar = ttk.Progressbar(root, variable=self.progress_var, maximum=100)
+        self.progress_bar.grid(row=10, column=0, columnspan=1, padx=2, pady=2)
+
+        # Dodanie etykiety pokazującej liczbę przetworzonych plików
+        self.progress_label = tk.Label(root, text="Files processed: 0/0", fg="blue")
+        self.progress_label.grid(row=11, column=0, columnspan=1, pady=2, sticky="e")
 
         # Załaduj domyślne kolumny
         self.update_columns()
@@ -148,6 +157,12 @@ class App:
             chk.pack(fill="x", pady=1)
             self.column_checkboxes[col] = var
 
+    def update_progress_callback(self, processed_count, total_files):
+        progress_percentage = (processed_count / total_files) * 100
+        self.progress_var.set(progress_percentage)
+        self.progress_label.config(text=f"Files processed: {processed_count}/{total_files}")
+        self.root.update_idletasks()
+
     def run_parser(self):
         self.base_folder = self.folder_entry.get()
         start_year = self.start_year_entry.get()
@@ -175,12 +190,13 @@ class App:
                 end_year=end_year if end_year else None,
                 workers=workers
             )
-            self.parsed_data = parser.parse_data_no_merging(self.file_pattern)
+            self.parsed_data = parser.parse_data_no_merging(self.file_pattern, progress_callback=self.update_progress_callback)
+
 
             elapsed_time = parser.end_time - parser.start_time
             row_count = len(self.parsed_data)
 
-            self.status_label.config(text=f"Parsing completed in {elapsed_time:.2f} seconds. Rows: {row_count}",
+            self.status_label.config(text=f"Parsing completed in {elapsed_time:.2f} seconds.\n Rows: {row_count}",
                                      fg="green")
 
             messagebox.showinfo("Success",
