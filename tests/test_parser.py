@@ -1,7 +1,7 @@
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import pandas as pd
-from parser import Parser
+from win_code.parser import Parser
 
 
 class TestParser(unittest.TestCase):
