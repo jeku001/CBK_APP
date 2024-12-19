@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 import pandas as pd
-from plot import Plots
+from linux_code.plot import Plots
 
 class TestPlots(unittest.TestCase):
 

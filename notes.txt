@@ -1,3 +1,0 @@
-        tk.Label(root,
-                 text="You can plot data without saving",
-                 fg="gray").grid(row=7, column=2, columnspan=1, pady=10)
