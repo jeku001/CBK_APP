@@ -8,7 +8,7 @@ class Plots:
         pass
 
     def plot(self, df, selected_columns=None, plot_type="linear"):
-        all_columns = df.columns[3:]  # skip first 3 columns
+        all_columns = df.columns[3:]
         columns_to_plot = selected_columns if selected_columns else all_columns
 
         for column in columns_to_plot:
@@ -17,7 +17,7 @@ class Plots:
 
                 if plot_type == "log":
                     plt.plot(df[df.columns[0]], df[column], label=column)
-                    plt.yscale("log")  # Skala logarytmiczna na osi Y
+                    plt.yscale("log")
                     plt.title(f'Logarithmic scale: {column}')
                 else:
                     plt.plot(df[df.columns[0]], df[column], label=column)
@@ -29,5 +29,5 @@ class Plots:
                 plt.grid(True)
 
                 cursor = Cursor(plt.gca(), useblit=True, color='red', linewidth=1)
-                plt.savefig("wykres.pdf", format="pdf")
+                #plt.savefig("wykres.pdf", format="pdf")
                 plt.show()

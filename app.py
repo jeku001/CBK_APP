@@ -56,13 +56,11 @@ class App:
         self.pattern_combo.set("0-Power Board")
         self.pattern_combo.bind("<<ComboboxSelected>>", self.on_pattern_selected)
 
-        # Select Columns
         tk.Label(root, text="Select Columns:").grid(row=5, column=0, padx=10, pady=5, sticky="nw")
 
         self.column_frame = tk.Frame(root)
         self.column_frame.grid(row=5, column=1, columnspan=3, padx=10, pady=5, sticky="w")
 
-        # Dodanie scrollowalnego obszaru dla checkboxów
         self.canvas = tk.Canvas(self.column_frame, width=400, height=200)
         self.scrollbar = tk.Scrollbar(self.column_frame, orient="vertical", command=self.canvas.yview)
         self.scrollable_frame = tk.Frame(self.canvas)
@@ -78,7 +76,6 @@ class App:
         self.canvas.pack(side="left", fill="both", expand=True)
         self.scrollbar.pack(side="right", fill="y")
 
-        # opcje parsowania
         self.mode_var = tk.StringVar(value="single")
         tk.Label(root, text="Processing Mode:").grid(row=6, column=0, padx=10, pady=5, sticky="e")
         single_radio = tk.Radiobutton(root, text="Single-process mode", variable=self.mode_var, value="single", command=self.toggle_workers)
@@ -86,7 +83,6 @@ class App:
         multi_radio = tk.Radiobutton(root, text="parallel processing mode", variable=self.mode_var, value="multi", command=self.toggle_workers)
         multi_radio.grid(row=7, column=1, sticky="w")
 
-        # wybor workerow
         tk.Label(root, text="Parallel tasks:").grid(row=8, column=0, padx=10, pady=5, sticky="e")
         self.workers_spin = tk.Spinbox(root, from_=1, to=32, width=5, state="disabled")
         self.workers_spin.grid(row=8, column=1, padx=10, pady=5, sticky="w")
@@ -103,11 +99,9 @@ class App:
 
         tk.Button(root, text="Plot Data", command=self.plot_data, bg="#d4f8d4", activebackground="#b3e6b3").grid(row=9, column=2, padx=10, pady=10)
 
-        # Status Label
         self.status_label = tk.Label(root, text="Ready", fg="blue", font=("Arial", 10, "italic"))
         self.status_label.grid(row=5, column=2, columnspan=1, pady=5)
 
-        # Opcje wyboru rodzaju wykresu
         self.plot_type = tk.StringVar(value="linear")  # Domyślnie "linear"
         linear_button = tk.Radiobutton(root, text="Linear", variable=self.plot_type, value="linear")
         linear_button.grid(row=10, column=1, padx=6, pady=5, sticky="e")
@@ -133,9 +127,7 @@ class App:
 
 
     def browse_folder(self):
-        # Get the parent directory of the current script location
         parent_dir = os.path.dirname(os.getcwd())
-        # Open the directory selection dialog starting from parent_dir
         folder_selected = filedialog.askdirectory(initialdir=parent_dir, title="Select Folder")
         if folder_selected:
             self.folder_entry.delete(0, tk.END)
@@ -146,11 +138,10 @@ class App:
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
 
-        selected_pattern = self.pattern_combo.get()  # Pobierz wybrany wzorzec
-        columns = self.pattern_columns.get(selected_pattern, [])  # Pobierz kolumny dla wzorca
-        self.column_checkboxes = {}  # Słownik do przechowywania stanu checkboxów
+        selected_pattern = self.pattern_combo.get()
+        columns = self.pattern_columns.get(selected_pattern, [])
+        self.column_checkboxes = {}
 
-        # Dodaj checkboxy dla każdej kolumny
         for col in columns:
             var = tk.BooleanVar(value=False)
             chk = tk.Checkbutton(self.scrollable_frame, text=col, variable=var, anchor="w", width=50)
@@ -167,7 +158,6 @@ class App:
 
         self.additional_columns = [col for col, var in self.column_checkboxes.items() if var.get()]
 
-        # Pobranie trybu i liczby workerów (jak wcześniej)
         mode = self.mode_var.get()
         if mode == "multi":
             workers = int(self.workers_spin.get())
@@ -188,9 +178,8 @@ class App:
             self.parsed_data = parser.parse_data_no_merging(self.file_pattern)
 
             elapsed_time = parser.end_time - parser.start_time
-            row_count = len(self.parsed_data)  # Zliczanie wierszy w wyniku parsowania
+            row_count = len(self.parsed_data)
 
-            # Aktualizacja statusu z informacją o czasie i ilości wierszy
             self.status_label.config(text=f"Parsing completed in {elapsed_time:.2f} seconds. Rows: {row_count}",
                                      fg="green")
 
@@ -217,12 +206,22 @@ class App:
             )
             if output_file:
                 try:
+
+                    self.status_label.config(text="Saving...", fg="orange")
+                    self.root.update_idletasks()
+
                     self.parsed_data.to_csv(output_file, index=False)
+
+                    self.status_label.config(text=f"File saved successfully: {output_file}", fg="green")
                     messagebox.showinfo("Success", f"File saved to: {output_file}")
                 except Exception as e:
+                    self.status_label.config(text="save failed.", fg="red")
                     messagebox.showerror("Error", f"An error occurred while saving the file: {e}")
+            else:
+                self.status_label.config(text="save canceled.", fg="blue")
         else:
-            messagebox.showerror("Error", "No data available to download.")
+            self.status_label.config(text="No data to save.", fg="red")
+            messagebox.showerror("Error", "No data available to save.")
 
     def get_columns_0(self):
         return ["'SStates Loadshed","'SStates Loadshed Latch","'SStates Test Mode","'SStates Magnetometer","'SStates PXFSS","'SStates NXFSS","'SStates PYFSS","'SStates NYFSS","'SStates PZFSS","'SStates NZFSS","'SStates XWheel","'SStates YWheel","'SStates ZWheel","'SStates RateGyro","'SStates MTX","'SStates MTY","'SStates MTZ","'SStates GPS Supply","'SStates 5V Supply","'SStates Spare","'SStates Instrument","'SStates GPS","'SStates BCDR0State","'SStates BCDR1State","'+X Panel Current(mA)","'+Y Panel Current(mA)","'+Z Panel Current(mA)","'-X Panel Current(mA)","'-Y Panel Current(mA)","'-Z Panel Current(mA)","'+X Panel Temperature(°C)","'+Y Panel Temperature(°C)","'+Z Panel Temperature(°C)","'-X Panel Temperature(°C)","'-Y Panel Temperature(°C)","'-Z Panel Temperature(°C)","'Bus Voltage(V)","'Main Switch Current(A)","'5V Rail Voltage(V)","'3V Rail Voltage(V)","'3V Rail Current(mA)","'ADC0 Temperture(°C)","'ADC1 Temperture(°C)","'ADC2 Temperture(°C)","'BCDR0 Battery Voltage(V)","'BCDR1 Battery Voltage(V)","'HKC Current(mA)","'ADCC Current(mA)","'Magnetometer Voltage(V)","'Rate Sensor Voltage(V)","'Rate Sensor Current(mA)","'Sun Sensor Voltage(V)","'Sun Sensor Current(mA)","'Mag. Torquer X Current(mA)","'Mag. Torquer Y Current(mA)","'Mag. Torquer Z Current(mA)","'Wheel Sum Current(mA)","'Wheel X Voltage(V)","'Wheel Y Voltage(V)","'Wheel Z Voltage(V)","'ST Switch Voltage(V)","'ST Switch Current(mA)","'ST Voltage(V)","'ST Current(mA)","'Instrument Voltage(V)","'Instrument Current(mA)","'UHF Rx Current(mA)","'UHF Rx Temperature(°C)","'UHF Rx SSI(V)","'S-Band Tx Voltage(V)","'S-Band Tx Current(A)"]
@@ -262,9 +261,8 @@ class App:
             messagebox.showerror("Error", "No columns selected for plotting.")
             return
 
-        window.destroy()  # Zamknięcie okna dialogowego
+        window.destroy()
 
-        # Generowanie wykresu dla wybranych kolumn
         plots = Plots()
         plots.plot(self.parsed_data, selected_columns, plot_type)
 
@@ -275,22 +273,18 @@ class App:
 
         plot_type = self.plot_type.get()
 
-        # Tworzenie nowego okna dialogowego
         plot_window = tk.Toplevel(self.root)
         plot_window.title("Select Columns to Plot")
         plot_window.geometry("400x300")
 
         tk.Label(plot_window, text="Select Columns for Plotting:").pack(pady=10)
 
-        # Listbox do ponownego wyboru kolumn
         column_listbox = tk.Listbox(plot_window, selectmode="multiple", height=15, width=50)
         column_listbox.pack(padx=10, pady=10)
 
-        # Dodanie kolumn do listy
-        for col in self.parsed_data.columns[3:]:  # Pomijamy pierwsze 3 kolumny
+        for col in self.parsed_data.columns[3:]:
             column_listbox.insert(tk.END, col)
 
-        # Przycisk do potwierdzenia
         tk.Button(plot_window, text="Plot Selected",
                   command=lambda: self.confirm_and_plot(plot_window, column_listbox, plot_type)).pack(pady=5)
 
@@ -303,28 +297,22 @@ class App:
                 messagebox.showerror("Error", "No columns selected for plotting.")
                 return
 
-            # Generowanie wykresu dla zaznaczonych kolumn
             plots = Plots()
             plots.plot(self.parsed_data, selected_columns)
 
-            # Wyświetlenie okna opcji
             options_window = tk.Toplevel(self.root)
             options_window.title("Plot Options")
             options_window.geometry("300x150")
 
             tk.Label(options_window, text="Choose an action:").pack(pady=10)
 
-            # Przycisk: Pobierz wykres
             tk.Button(options_window, text="Download Plot", command=lambda: self.download_plot(options_window)).pack(
                 pady=5)
 
-            # Przycisk: Wybierz inną kolumnę
             tk.Button(options_window, text="Move to Another", command=lambda: options_window.destroy()).pack(pady=5)
 
-            # Przycisk: Zakończ
             tk.Button(options_window, text="Terminate", command=lambda: self.terminate_app(options_window)).pack(pady=5)
 
-        # Główna pętla – wybór kolumn i generowanie wykresów
         while True:
             plot_and_show_options()
             if hasattr(self, 'terminate') and self.terminate:
@@ -336,7 +324,7 @@ class App:
         window.destroy()
 
     def terminate_app(self):
-        self.root.destroy()  # Zamyka główne okno aplikacji
+        self.root.destroy()
 
 
 if __name__ == "__main__":

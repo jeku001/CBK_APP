@@ -12,7 +12,6 @@ class Parser:
         self.workers = workers
 
     def parse_single_file(self, file_path, required_columns):
-        # Funkcja pomocnicza do równoległego przetwarzania plików
         try:
             df = pd.read_csv(file_path, encoding="iso-8859-1")
             if not all(col in df.columns for col in required_columns):
@@ -37,7 +36,6 @@ class Parser:
         if self.end_year is not None:
             self.end_year = int(self.end_year)
 
-        # Zbieramy listę plików do przetworzenia
         files_to_process = []
         for root, dirs, files in os.walk(self.base_folder):
             folder_name = os.path.basename(root)
@@ -52,17 +50,14 @@ class Parser:
                     file_path = os.path.join(root, file)
                     files_to_process.append(file_path)
 
-        # Przetwarzanie plików w trybie jedno- lub wielowątkowym
         data_list = []
         if self.workers > 1:
-            # Wielowątkowe/multiprocesowe przetwarzanie
             with ProcessPoolExecutor(max_workers=self.workers) as executor:
                 results = executor.map(self.parse_single_file, files_to_process, [required_columns]*len(files_to_process))
                 for res_df in results:
                     if not res_df.empty:
                         data_list.append(res_df)
         else:
-            # Przetwarzanie sekwencyjne
             for fpath in files_to_process:
                 res_df = self.parse_single_file(fpath, required_columns)
                 if not res_df.empty:
