@@ -83,33 +83,59 @@ class App:
         multi_radio = tk.Radiobutton(root, text="parallel processing mode", variable=self.mode_var, value="multi", command=self.toggle_workers)
         multi_radio.grid(row=7, column=1, sticky="w")
 
+        # question marks
+        single_help = tk.Label(root, text="?", fg="blue", cursor="hand2")
+        single_help.grid(row=6, column=1, padx=5)
+        single_help.bind("<Enter>", lambda e: self.show_tooltip(e, "Single-process mode processes files one by one"))
+        single_help.bind("<Leave>", self.hide_tooltip)
+
+        multi_help = tk.Label(root, text="?", fg="blue", cursor="hand2")
+        multi_help.grid(row=7, column=1, padx=5)
+        multi_help.bind("<Enter>", lambda e: self.show_tooltip(e, "Parallel processing mode is more efficient for larger datasets"))
+        multi_help.bind("<Leave>", self.hide_tooltip)
+
+        # Label for parallel tasks
         tk.Label(root, text="Parallel tasks").grid(row=8, column=0, padx=10, pady=5, sticky="e")
         self.workers_spin = tk.Spinbox(root, from_=1, to=32, width=5, state="disabled")
-        self.workers_spin.grid(row=8, column=1, padx=10, pady=5, sticky="w")
+        self.workers_spin.grid(row=8, column=1, padx=(10, 50), pady=5, sticky="w")
+        multi_help = tk.Label(root, text="?", fg="blue", cursor="hand2")
+        multi_help.grid(row=8, column=1, padx=(80, 0), sticky="w")
+        multi_help.bind("<Enter>", lambda e: self.show_tooltip(e,
+                                                               "Specify the number of parallel tasks to run. \nHigher values can speed up processing for large datasets\nbut may require more system resources.\n try 4."))
+        multi_help.bind("<Leave>", self.hide_tooltip)
 
-        tk.Button(root, text="Run Parser", command=self.run_parser, bg="#d4f8d4", activebackground="#b3e6b3").grid(row=9, column=0, padx=10, pady=20, sticky="e")
+        tk.Button(root, text="Run Parser", command=self.run_parser, bg="#d4f8d4", activebackground="#b3e6b3").grid(
+            row=9, column=0, padx=10, pady=20, sticky="e")
 
         self.download_button = tk.Button(root, text="save parsed File", command=self.download_parsed_file,
                                          bg="#d4f8d4", activebackground="#b3e6b3", state="disabled")
         self.download_button.grid(row=8, column=2, padx=10, pady=20)
+        multi_help = tk.Label(root, text="?", fg="blue", cursor="hand2")
+        multi_help.grid(row=8, column=3, padx=5, sticky="w")
+        multi_help.bind("<Enter>", lambda e: self.show_tooltip(e, "You can plot data without\nsaving parsed data"))
+        multi_help.bind("<Leave>", self.hide_tooltip)
 
-        tk.Label(root,
-                 text="You can plot data without saving",
-                 fg="gray").grid(row=7, column=2, columnspan=1, pady=10)
 
-        tk.Button(root, text="Plot Data", command=self.plot_data, bg="#d4f8d4", activebackground="#b3e6b3").grid(row=9, column=2, padx=10, pady=10)
+        tk.Button(root, text="Plot Data", command=self.plot_data, bg="#d4f8d4", activebackground="#b3e6b3").grid(
+            row=9, column=2, padx=10, pady=10)
+        single_help = tk.Label(root, text="?", fg="blue", cursor="hand2")
+        single_help.grid(row=9, column=3, padx=0, sticky="w")
+        single_help.bind("<Enter>", lambda e: self.show_tooltip(e, "specify scale for your plot"))
+        single_help.bind("<Leave>", self.hide_tooltip)
 
         self.status_label = tk.Label(root, text="", fg="blue", font=("Arial", 10, "italic"))
-        self.status_label.grid(row=9, column=0, columnspan=2, pady=2, sticky="n")
+        self.status_label.grid(row=9, column=0, columnspan=2, pady=20, sticky="n")
 
         self.plot_type = tk.StringVar(value="linear")  # Domyślnie "linear"
         linear_button = tk.Radiobutton(root, text="Linear", variable=self.plot_type, value="linear")
-        linear_button.grid(row=10, column=1, padx=6, pady=5, sticky="e")
+        linear_button.grid(row=10, column=1, padx=(140,0), pady=5, sticky="e")  # Zwiększony padx
+
         log_button = tk.Radiobutton(root, text="Logarithmic", variable=self.plot_type, value="log")
-        log_button.grid(row=10, column=2, padx=6, pady=5, sticky="e")
+        log_button.grid(row=10, column=2, padx=(40,10), pady=5, sticky="w")  # Zwiększony padx
 
         tk.Label(root,
-                 text="You can select different columns for parsing and plotting without restarting the application.\nRun Parser and Plot Data multiple times for different columns.",
+                 text="You can select different columns for parsing and plotting without restarting the application."
+                      "\nRun Parser and Plot Data multiple times for different columns.",
                  fg="gray").grid(row=13, column=0, columnspan=4, pady=10)
 
         tk.Button(root, text="Exit", command=self.terminate_app, bg="#f8d4d4", activebackground="#e6b3b3").grid(
@@ -126,6 +152,20 @@ class App:
 
         # Załaduj domyślne kolumny
         self.update_columns()
+
+
+    def show_tooltip(self, event, text):
+        # Create a tooltip window
+        self.tooltip = tk.Toplevel()
+        self.tooltip.overrideredirect(True)  # Remove window decorations
+        self.tooltip.geometry(f"+{event.x_root+10}+{event.y_root+10}")  # Position near cursor
+        label = tk.Label(self.tooltip, text=text, background="yellow", relief="solid", borderwidth=1, font=("Arial", 10))
+        label.pack()
+
+    def hide_tooltip(self, event):
+        # Destroy the tooltip window
+        if hasattr(self, "tooltip"):
+            self.tooltip.destroy()
 
     def on_pattern_selected(self, event=None):
         self.update_columns(event)
@@ -180,7 +220,7 @@ class App:
             workers = 1
 
         try:
-            self.status_label.config(text="Parsing data...", fg="orange")
+            self.status_label.config(text="", fg="orange")
             self.root.update_idletasks()
 
             parser = Parser(
@@ -190,7 +230,8 @@ class App:
                 end_year=end_year if end_year else None,
                 workers=workers
             )
-            self.parsed_data = parser.parse_data_no_merging(self.file_pattern, progress_callback=self.update_progress_callback)
+            self.parsed_data = parser.parse_data_no_merging(self.file_pattern,
+                                                            progress_callback=self.update_progress_callback)
 
 
             elapsed_time = parser.end_time - parser.start_time
@@ -200,7 +241,8 @@ class App:
                                      fg="green")
 
             messagebox.showinfo("Success",
-                                "Data parsed successfully. You can now download the parsed file or plot the data.")
+                                "Data parsed successfully. "
+                                "You can now download the parsed file or plot the data.")
             self.download_button.config(state="normal")
         except Exception as e:
             self.status_label.config(text="Parsing failed.", fg="red")
