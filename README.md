@@ -15,7 +15,7 @@
 ---
 
 ## Overview
-This application is designed to help Scientists from the polish Space Research Centre efficiently process housekeeping datasets from the *LEM* and *HEWELIUSZ* satellites. The primary goal is to enable the extraction and visualization of specific data columns from CSV files containing over 30GB of satellite telemetry data.
+This application is designed to help Scientists from the polish Space Research Centre efficiently process housekeeping datasets from the Lem and Heweliusz satellites. The primary goal is to enable the extraction and visualization of specific data columns from CSV files containing over 30GB of satellite telemetry data.
 
 Key features include:
 - Parsing and filtering CSV data based on selected columns.
@@ -26,15 +26,16 @@ Key features include:
 ---
 
 ### Source of Data
-The data originates from the LEM and HEWELIUSZ satellites, launched as part of a collaborative project to collect telemetry data. However, due to confidentiality agreements, the raw data cannot be made publicly available.
+The data originates from the Le and Heweliusz satellites, launched as part of a collaborative project to collect telemetry data. However, the raw data cannot be made publicly available.
 
 - **LEM Satellite**: A Polish satellite launched in 2013, primarily designed for stellar photometry and astrophysical observations.
-- **HEWELIUSZ Satellite**: Launched in 2014, HEWELIUSZ complements LEM's mission, with additional capabilities for space environment monitoring. The dataset spans from their launch dates to the present, amounting to over 30GB of CSV files.
+- **HEWELIUSZ Satellite**: Launched in 2014, Heweliusz complements Lem's mission with additional capabilities for space environment monitoring. Housekeeping dataset spans from their launch dates to the present, amounting to over 30GB of CSV files.
 
 
 ### Data Format
 The files are organized in a hierarchical structure. For example:
 
+<pre>
 base_folder/
 ├── 2020-01/
 │   ├── 2020-01-01/
@@ -47,6 +48,8 @@ base_folder/
 │   └── ...
 ├── 2020-02/
 │   └── ...
+</pre>
+
 
 
 Each file contains time-series data with columns such as:
@@ -63,12 +66,11 @@ To run the application, follow these steps:
    - Obtain the `app.exe` file for Windows or `app` for Linux, located in the `win_app` and `linux_app` directories respectively.
 
 2. **Run the executable**
-   - double-click `app.exe` or 'app' to launch the application.
+   - double-click `app.exe` or `app` to launch the application.
 
 3. **System Requirements**
    - At least 8GB of RAM (recommended for larger datasets).
    - A quad-core processor (4 cores) or higher is recommended for efficient parallel processing.
-   - 
 ---
 
 ## Using the Application
