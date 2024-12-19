@@ -109,4 +109,4 @@ To run the application, follow these steps:
 ## Acknowledgements
 This tool was developed to simplify the analysis of satellite telemetry data. Special thanks to the teams behind LEM and HEWELIUSZ for providing invaluable satellite telemetry data.
 
-For further inquiries or bug reports, please contact [jedrzejslupski@gmail.com].
+For further inquiries or bug reports, please contact jedrzejslupski@gmail.com
