@@ -34,7 +34,20 @@ The data originates from the LEM and HEWELIUSZ satellites, launched as part of a
 
 ### Data Format
 The files are organized in a hierarchical structure. For example:
-base_folder/ ├── 2020-01/ │ ├── 2020-01-01/ │ │ ├── 0-Power Board-20200101.csv │ │ ├── 1-BCDR0-20200101.csv │ │ └── ... │ ├── 2020-01-02/ │ │ ├── 0-Power Board-20200102.csv │ │ └── ... │ └── ... ├── 2020-02/ │ └── ...
+
+base_folder/
+├── 2020-01/
+│   ├── 2020-01-01/
+│   │   ├── 0-Power Board-20200101.csv
+│   │   ├── 1-BCDR0-20200101.csv
+│   │   └── ...
+│   ├── 2020-01-02/
+│   │   ├── 0-Power Board-20200102.csv
+│   │   └── ...
+│   └── ...
+├── 2020-02/
+│   └── ...
+
 
 Each file contains time-series data with columns such as:
 - `'Date (YYYY-MM-DD HH:MM:SS)`': Timestamp of the data.
