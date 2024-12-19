@@ -54,7 +54,7 @@ class App:
         self.pattern_combo = ttk.Combobox(root, values=list(self.pattern_columns.keys()), state="readonly")
         self.pattern_combo.grid(row=4, column=1, columnspan=2, padx=10, pady=5, sticky="w")
         self.pattern_combo.set("0-Power Board")
-        self.pattern_combo.bind("<<ComboboxSelected>>", self.update_columns)
+        self.pattern_combo.bind("<<ComboboxSelected>>", self.on_pattern_selected)
 
         # Select Columns
         tk.Label(root, text="Select Columns:").grid(row=5, column=0, padx=10, pady=5, sticky="nw")
@@ -110,6 +110,14 @@ class App:
 
         # Załaduj domyślne kolumny
         self.update_columns()
+
+    def on_pattern_selected(self, event=None):
+        self.update_columns(event)
+        self.update_file_pattern(event)
+
+    def update_file_pattern(self, event=None):
+        self.file_pattern = self.pattern_combo.get()
+
 
     def browse_folder(self):
         # Get the parent directory of the current script location
