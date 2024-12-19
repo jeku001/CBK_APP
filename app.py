@@ -12,7 +12,7 @@ class App:
         self.root = root
         self.root.title("Data Parser Application")
         #self.base_folder = ""
-        self.file_pattern = "0-Power Board"  # Domyślny wzorzec
+        self.file_pattern = "0-Power Board"
         self.parsed_data = None
         self.additional_columns = []
 
@@ -78,35 +78,48 @@ class App:
         self.canvas.pack(side="left", fill="both", expand=True)
         self.scrollbar.pack(side="right", fill="y")
 
+        # opcje parsowania
+        self.mode_var = tk.StringVar(value="single")
+        tk.Label(root, text="Processing Mode:").grid(row=6, column=0, padx=10, pady=5, sticky="e")
+        single_radio = tk.Radiobutton(root, text="Single-process mode", variable=self.mode_var, value="single", command=self.toggle_workers)
+        single_radio.grid(row=6, column=1, sticky="w")
+        multi_radio = tk.Radiobutton(root, text="parallel processing mode", variable=self.mode_var, value="multi", command=self.toggle_workers)
+        multi_radio.grid(row=7, column=1, sticky="w")
+
+        # wybor workerow
+        tk.Label(root, text="Parallel tasks:").grid(row=8, column=0, padx=10, pady=5, sticky="e")
+        self.workers_spin = tk.Spinbox(root, from_=1, to=32, width=5, state="disabled")
+        self.workers_spin.grid(row=8, column=1, padx=10, pady=5, sticky="w")
+
         tk.Button(root, text="Run Parser", command=self.run_parser, bg="#d4f8d4", activebackground="#b3e6b3").grid(row=6, column=2, padx=10, pady=20)
 
         self.download_button = tk.Button(root, text="Download Parsed File", command=self.download_parsed_file,
                                          bg="#d4f8d4", activebackground="#b3e6b3", state="disabled")
-        self.download_button.grid(row=6, column=1, padx=10, pady=20)
+        self.download_button.grid(row=8, column=2, padx=10, pady=20)
 
         tk.Label(root,
                  text="You can plot data without downloading",
-                 fg="gray").grid(row=7, column=1, columnspan=1, pady=10)
+                 fg="gray").grid(row=7, column=2, columnspan=1, pady=10)
 
-        tk.Button(root, text="Plot Data", command=self.plot_data, bg="#d4f8d4", activebackground="#b3e6b3").grid(row=7, column=2, padx=10, pady=10)
-
-        tk.Label(root,
-                 text="You can select different columns for parsing and plotting without restarting the application.\nRun Parser and Plot Data multiple times for different columns.",
-                 fg="gray").grid(row=9, column=0, columnspan=4, pady=10)
-
-        tk.Button(root, text="Exit", command=self.terminate_app, bg="#f8d4d4", activebackground="#e6b3b3").grid(
-            row=10, column=1, columnspan=2, pady=10)
+        tk.Button(root, text="Plot Data", command=self.plot_data, bg="#d4f8d4", activebackground="#b3e6b3").grid(row=9, column=2, padx=10, pady=10)
 
         # Status Label
         self.status_label = tk.Label(root, text="Ready", fg="blue", font=("Arial", 10, "italic"))
-        self.status_label.grid(row=6, column=0, columnspan=1, pady=5)
+        self.status_label.grid(row=5, column=2, columnspan=1, pady=5)
 
         # Opcje wyboru rodzaju wykresu
         self.plot_type = tk.StringVar(value="linear")  # Domyślnie "linear"
         linear_button = tk.Radiobutton(root, text="Linear", variable=self.plot_type, value="linear")
-        linear_button.grid(row=8, column=1, padx=6, pady=5, sticky="e")
+        linear_button.grid(row=10, column=1, padx=6, pady=5, sticky="e")
         log_button = tk.Radiobutton(root, text="Logarithmic", variable=self.plot_type, value="log")
-        log_button.grid(row=8, column=2, padx=6, pady=5, sticky="e")
+        log_button.grid(row=10, column=2, padx=6, pady=5, sticky="e")
+
+        tk.Label(root,
+                 text="You can select different columns for parsing and plotting without restarting the application.\nRun Parser and Plot Data multiple times for different columns.",
+                 fg="gray").grid(row=11, column=0, columnspan=4, pady=10)
+
+        tk.Button(root, text="Exit", command=self.terminate_app, bg="#f8d4d4", activebackground="#e6b3b3").grid(
+            row=12, column=1, columnspan=2, pady=10)
 
         # Załaduj domyślne kolumny
         self.update_columns()
@@ -148,12 +161,18 @@ class App:
         self.base_folder = self.folder_entry.get()
         start_year = self.start_year_entry.get()
         end_year = self.end_year_entry.get()
-
         if not self.base_folder:
             messagebox.showerror("Error", "Please select a base folder")
             return
 
         self.additional_columns = [col for col, var in self.column_checkboxes.items() if var.get()]
+
+        # Pobranie trybu i liczby workerów (jak wcześniej)
+        mode = self.mode_var.get()
+        if mode == "multi":
+            workers = int(self.workers_spin.get())
+        else:
+            workers = 1
 
         try:
             self.status_label.config(text="Parsing data...", fg="orange")
@@ -163,13 +182,17 @@ class App:
                 self.base_folder,
                 self.additional_columns,
                 start_year=start_year if start_year else None,
-                end_year=end_year if end_year else None
+                end_year=end_year if end_year else None,
+                workers=workers
             )
             self.parsed_data = parser.parse_data_no_merging(self.file_pattern)
 
-            # Użycie atrybutów `start_time` i `end_time`
             elapsed_time = parser.end_time - parser.start_time
-            self.status_label.config(text=f"Parsing completed in {elapsed_time:.2f} seconds.", fg="green")
+            row_count = len(self.parsed_data)  # Zliczanie wierszy w wyniku parsowania
+
+            # Aktualizacja statusu z informacją o czasie i ilości wierszy
+            self.status_label.config(text=f"Parsing completed in {elapsed_time:.2f} seconds. Rows: {row_count}",
+                                     fg="green")
 
             messagebox.showinfo("Success",
                                 "Data parsed successfully. You can now download the parsed file or plot the data.")
@@ -177,6 +200,13 @@ class App:
         except Exception as e:
             self.status_label.config(text="Parsing failed.", fg="red")
             messagebox.showerror("Error", f"An error occurred: {e}")
+
+    def toggle_workers(self):
+        mode = self.mode_var.get()
+        if mode == "multi":
+            self.workers_spin.config(state="normal")
+        else:
+            self.workers_spin.config(state="disabled")
 
     def download_parsed_file(self):
         if self.parsed_data is not None and not self.parsed_data.empty:
