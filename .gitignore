@@ -1,3 +1,5 @@
 *.csv
 UAM_BRITE/
 venv/
+linux_app/build/
+win_app/build/
