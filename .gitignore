@@ -2,6 +2,6 @@
 UAM_BRITE/
 venv/
 linux_app/build/
-!linux_app/dist/
+!dist/
 win_app/build/
 !win_app/dist/
