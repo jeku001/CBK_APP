@@ -7,7 +7,7 @@ class Plots:
     def __init__(self):
         pass
 
-    def plot(self, df, selected_columns=None, plot_type="linear"):
+    def plot(self, df, selected_columns=None, plot_type_var="linear"):
         all_columns = df.columns[3:]
         columns_to_plot = selected_columns if selected_columns else all_columns
 
@@ -15,7 +15,7 @@ class Plots:
             if column in df.columns:
                 plt.figure(figsize=(12, 6))
 
-                if plot_type == "log":
+                if plot_type_var == "log":
                     plt.plot(df[df.columns[0]], df[column], label=column)
                     plt.yscale("log")
                     plt.title(f'Logarithmic scale: {column}')

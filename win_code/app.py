@@ -21,6 +21,7 @@ class App:
         self.file_pattern = "0-Power Board"
         self.additional_columns = []
 
+
         # Layout konfiguracji siatki
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_columnconfigure(1, weight=1)
@@ -136,7 +137,11 @@ class App:
         self.download_button = ctk.CTkButton(self.right_frame, text="Save Parsed File",
                                              command=self.download_parsed_file, state="disabled")
         self.download_button.pack(pady=10)
+
+        self.setup_plot_options() #inicjowanie ramki na typ skali
+
         ctk.CTkButton(self.right_frame, text="Plot Data", command=self.plot_data).pack(pady=10)
+
 
         # Przycisk Exit teraz umieszczony na dole i z lekko czerwonym kolorem
         exit_button = ctk.CTkButton(self.right_frame, text="Exit", command=self.terminate_app, fg_color="#f73e3e")
@@ -151,8 +156,6 @@ class App:
         self.progress_bar.grid(row=4, column=0, columnspan=3, pady=5)
         self.progress_bar.set(0)
 
-        # Typ wykresu (Linear / Log)
-        self.plot_type = ctk.StringVar(value="linear")
 
     def update_worker_label(self, value):
         self.worker_label.configure(text=f"Tasks: {int(value)}")
@@ -309,7 +312,7 @@ class App:
     def get_columns_9(self):
         return ["'Reset Count File","'Reset Reason File","'Comm Err Count File","'Scrub Index File","'SEU Count File","'Init Pointer File","'Ping Pointer File","'ADC Raw1 File","'ADC Raw2 File","'ADC Raw3 File","'ADC Raw4 File","'PWM Setting File","'PWM Period File","'PWM Controller Pointer File","'PWM Controller Cycle File","'PWM DCycle1 File","'PWM DCycle2 File","'PWM DCycle3 File","'PWM DCycle4 File","'Converted Temp1 File(°C)","'Converted Temp2 File(°C)","'Converted Temp3 File(°C)","'Converted Temp4 File(°C)","'Controller P Gain File","'Controller I Gain File","'Controller D Gain File","'Controller I Max File","'Controller Max DT File","'Controller SetPoint File","'Controller I State File"]
 
-    def confirm_and_plot(self, window, column_listbox, plot_type):
+    def confirm_and_plot(self, window, column_listbox, plot_type_var):
         selected_indices = column_listbox.curselection()
         selected_columns = [column_listbox.get(i) for i in selected_indices]
 
@@ -320,15 +323,15 @@ class App:
         window.destroy()
 
         plots = Plots()
-        plots.plot(self.parsed_data, selected_columns, plot_type)
+        plots.plot(self.parsed_data, selected_columns, plot_type_var)
 
     def plot_data(self):
         if self.parsed_data is None or self.parsed_data.empty:
             messagebox.showerror("Error", "No data to plot. Please run the parser first.")
             return
 
-        plot_type = self.plot_type.get()
-
+        plot_type_var = self.plot_type_var.get()  # Pobieranie wybranej opcji wykresu
+        print(f"scale selected: {plot_type_var}")
         plot_window = tk.Toplevel(self.root)
         plot_window.title("Select Columns to Plot")
         plot_window.geometry("200x400")
@@ -342,7 +345,7 @@ class App:
             column_listbox.insert(tk.END, col)
 
         tk.Button(plot_window, text="Plot Selected",
-                  command=lambda: self.confirm_and_plot(plot_window, column_listbox, plot_type)).pack(pady=5)
+                  command=lambda: self.confirm_and_plot(plot_window, column_listbox, plot_type_var)).pack(pady=5)
 
     def plot_loop(self):
         def plot_and_show_options():
@@ -354,7 +357,7 @@ class App:
                 return
 
             plots = Plots()
-            plots.plot(self.parsed_data, selected_columns)
+            plots.plot(self.parsed_data, selected_columns,plot_type_var=self.plot_type_var)
 
             options_window = tk.Toplevel(self.root)
             options_window.title("Plot Options")
@@ -373,6 +376,35 @@ class App:
             plot_and_show_options()
             if hasattr(self, 'terminate') and self.terminate:
                 break
+
+    def plot_type_changed(self):
+        current_plot_type = self.plot_type_var.get()
+        print(f"Plot type changed to: {current_plot_type}")
+
+    def setup_plot_options(self):
+        # Ramka dla opcji wykresu
+        self.plot_options_frame = ctk.CTkFrame(self.right_frame)
+        self.plot_options_frame.pack(pady=10, fill='x', expand=False)
+
+        # Tytuł sekcji
+        plot_options_label = ctk.CTkLabel(self.plot_options_frame, text="Plot Type Options", font=("Arial", 12, "bold"))
+        plot_options_label.pack(pady=(10, 5))
+
+        # Zmienna do przechowywania wybranej opcji wykresu
+        self.plot_type_var = tk.StringVar(value="linear")  # Domyślnie ustawiony na 'linear'
+
+        # Przyciski radio dla wyboru typu wykresu
+        linear_button = ctk.CTkRadioButton(self.plot_options_frame, text="Linear", variable=self.plot_type_var,
+                                           value="linear", command=self.plot_type_changed)
+        linear_button.pack(side="left", padx=10, pady=10)
+
+        logarithmic_button = ctk.CTkRadioButton(self.plot_options_frame, text="Logarithmic",
+                                                variable=self.plot_type_var, value="logarithmic",
+                                                command=self.plot_type_changed)
+        logarithmic_button.pack(side="left", padx=10, pady=10)
+
+        self.plot_options_frame.configure(fg_color="white")  # Set foreground color
+        self.plot_options_frame.configure(bg_color="white")  # Set background color if supported
 
     def download_plot(self, window):
         plt.savefig("plot_output.pdf", format="pdf")
