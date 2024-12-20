@@ -1,20 +1,24 @@
 import tkinter as tk
+import customtkinter as ctk
 from tkinter import filedialog, messagebox, ttk
 from parser import Parser
 from plot import Plots
 import os
+import matplotlib
+matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
-
 # Tkinter Application
 class App:
     def __init__(self, root):
+        ctk.set_appearance_mode("System")  # Możesz wybrać "Light" lub "Dark"
+        ctk.set_default_color_theme("blue")  # Motyw kolorystyczny
+        self.parsed_data = None
+        self.file_pattern = "0-Power Board"
         self.root = root
         self.root.title("Data Parser Application")
         self.root.geometry("620x800")
-        #self.base_folder = ""
-        self.file_pattern = "0-Power Board"
-        self.parsed_data = None
-        self.additional_columns = []
+        self.status_label = ctk.CTkLabel(root, text="", text_color="blue", font=("Arial", 10, "italic"))
+        self.status_label.grid(row=9, column=0, columnspan=2, pady=20, sticky="n")
 
         # Mapowanie wzorców plików na listy kolumn
         self.pattern_columns = {
@@ -30,127 +34,92 @@ class App:
             "9-Header Board": self.get_columns_9()
         }
 
-        tk.Label(root, text="Please click Browse to select the 'WOD/Parsed' folder with data to begin.", font=("Arial", 10, "bold")).grid(
-            row=0, column=0, columnspan=4, pady=5
-        )
+        # Label
+        ctk.CTkLabel(
+            root,
+            text="Please click Browse to select the 'WOD/Parsed' folder with data to begin.",
+            font=("Arial", 10, "bold")
+        ).grid(row=0, column=0, columnspan=4, pady=5)
 
-
-        tk.Label(root, text="Base Folder").grid(row=1, column=0, padx=10, pady=5, sticky="e")
-        self.folder_entry = tk.Entry(root, width=50)
+        # Folder Entry and Browse Button
+        ctk.CTkLabel(root, text="Base Folder").grid(row=1, column=0, padx=10, pady=5, sticky="e")
+        self.folder_entry = ctk.CTkEntry(root, width=400)
         self.folder_entry.grid(row=1, column=1, padx=10, pady=5, sticky="w")
-        tk.Button(root, text="Browse", command=self.browse_folder).grid(row=1, column=2, padx=10, pady=5, sticky="w")
+        ctk.CTkButton(root, text="Browse", command=self.browse_folder).grid(row=1, column=2, padx=10, pady=5, sticky="w")
 
         # Start & End Year
-        tk.Label(root, text="Start Year").grid(row=2, column=0, padx=10, pady=5, sticky="e")
-        self.start_year_entry = tk.Entry(root, width=10)
+        ctk.CTkLabel(root, text="Start Year").grid(row=2, column=0, padx=10, pady=5, sticky="e")
+        self.start_year_entry = ctk.CTkEntry(root, width=100)
         self.start_year_entry.grid(row=2, column=1, padx=(0, 10), pady=5, sticky="w")
 
-        tk.Label(root, text="End Year").grid(row=3, column=0, padx=10, pady=5, sticky="e")
-        self.end_year_entry = tk.Entry(root, width=10)
+        ctk.CTkLabel(root, text="End Year").grid(row=3, column=0, padx=10, pady=5, sticky="e")
+        self.end_year_entry = ctk.CTkEntry(root, width=100)
         self.end_year_entry.grid(row=3, column=1, padx=(0, 10), pady=5, sticky="w")
 
-        # File Pattern
-        tk.Label(root, text="File Pattern").grid(row=4, column=0, padx=10, pady=5, sticky="e")
-        self.pattern_combo = ttk.Combobox(root, values=list(self.pattern_columns.keys()), state="readonly")
+        # File Pattern ComboBox
+        ctk.CTkLabel(root, text="File Pattern").grid(row=4, column=0, padx=10, pady=5, sticky="e")
+        self.pattern_combo = ctk.CTkComboBox(root, values=list(self.pattern_columns.keys()), command=self.on_pattern_selected)
         self.pattern_combo.grid(row=4, column=1, columnspan=2, padx=10, pady=5, sticky="w")
         self.pattern_combo.set("0-Power Board")
-        self.pattern_combo.bind("<<ComboboxSelected>>", self.on_pattern_selected)
 
-        tk.Label(root, text="Select Columns").grid(row=5, column=0, padx=10, pady=5, sticky="nw")
-
-        self.column_frame = tk.Frame(root)
+        # Columns Frame with Scrollable Area
+        self.column_frame = ctk.CTkFrame(root)
         self.column_frame.grid(row=5, column=1, columnspan=3, padx=10, pady=5, sticky="w")
 
-        self.canvas = tk.Canvas(self.column_frame, width=200, height=200)
-        self.scrollbar = tk.Scrollbar(self.column_frame, orient="vertical", command=self.canvas.yview)
-        self.scrollable_frame = tk.Frame(self.canvas)
-
-        self.scrollable_frame.bind(
-            "<Configure>",
-            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-        )
+        self.canvas = ctk.CTkCanvas(self.column_frame, width=200, height=200)
+        self.scrollable_frame = ctk.CTkFrame(self.canvas)
 
         self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
-        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
         self.canvas.pack(side="left", fill="both", expand=True)
-        self.scrollbar.pack(side="right", fill="y")
+        scrollbar = ctk.CTkScrollbar(self.column_frame, orientation="vertical", command=self.canvas.yview)
+        scrollbar.pack(side="right", fill="y")
+        self.canvas.configure(yscrollcommand=scrollbar.set)
 
-        self.mode_var = tk.StringVar(value="single")
-        tk.Label(root, text="Processing Mode").grid(row=6, column=0, padx=10, pady=5, sticky="e")
-        single_radio = tk.Radiobutton(root, text="Single-process mode", variable=self.mode_var, value="single", command=self.toggle_workers)
-        single_radio.grid(row=6, column=1, sticky="w")
-        multi_radio = tk.Radiobutton(root, text="parallel processing mode", variable=self.mode_var, value="multi", command=self.toggle_workers)
-        multi_radio.grid(row=7, column=1, sticky="w")
+        # Radio Buttons for Processing Mode
+        self.mode_var = ctk.StringVar(value="single")
+        ctk.CTkLabel(root, text="Processing Mode").grid(row=6, column=0, padx=10, pady=5, sticky="e")
+        ctk.CTkRadioButton(root, text="Single-process mode", variable=self.mode_var, value="single", command=self.toggle_workers).grid(row=6, column=1, sticky="w")
+        ctk.CTkRadioButton(root, text="Parallel processing mode", variable=self.mode_var, value="multi", command=self.toggle_workers).grid(row=7, column=1, sticky="w")
 
-        # question marks
-        single_help = tk.Label(root, text="?", fg="blue", cursor="hand2", font=("Arial", 11, "bold"))
-        single_help.grid(row=6, column=1, padx=5)
-        single_help.bind("<Enter>", lambda e: self.show_tooltip(e, "Single-process mode processes files one by one"))
-        single_help.bind("<Leave>", self.hide_tooltip)
+        # Slider for Workers
+        ctk.CTkLabel(root, text="Parallel tasks").grid(row=8, column=0, padx=10, pady=5, sticky="e")
+        self.workers_slider = ctk.CTkSlider(root, from_=2, to=16, number_of_steps=14)
+        self.workers_slider.grid(row=8, column=1, padx=(10, 50), pady=5, sticky="w")
+        self.workers_slider.set(2)  # Ustawienie domyślnej wartości na 2
 
-        multi_help = tk.Label(root, text="?", fg="blue", cursor="hand2", font=("Arial", 11, "bold"))
-        multi_help.grid(row=7, column=1, padx=5)
-        multi_help.bind("<Enter>", lambda e: self.show_tooltip(e, "Parallel processing mode is more efficient for larger datasets"))
-        multi_help.bind("<Leave>", self.hide_tooltip)
-
-        # Label for parallel tasks
-        tk.Label(root, text="Parallel tasks").grid(row=8, column=0, padx=10, pady=5, sticky="e")
-        self.workers_spin = tk.Spinbox(root, from_=2, to=16, width=5, state="disabled")
-        self.workers_spin.grid(row=8, column=1, padx=(10, 50), pady=5, sticky="w")
-        multi_help = tk.Label(root, text="?", fg="blue", cursor="hand2", font=("Arial", 11, "bold"))
-        multi_help.grid(row=8, column=1, padx=(80, 0), sticky="w")
-        multi_help.bind("<Enter>", lambda e: self.show_tooltip(e,
-                                                               "Specify the number of parallel tasks to run. \nHigher values can speed up processing for large datasets\nbut may require more system resources.\n try 4."))
-        multi_help.bind("<Leave>", self.hide_tooltip)
-
-        tk.Button(root, text="Run Parser", command=self.run_parser, bg="#d4f8d4", activebackground="#b3e6b3").grid(
-            row=9, column=0, padx=10, pady=20, sticky="e")
-
-        self.download_button = tk.Button(root, text="save parsed File", command=self.download_parsed_file,
-                                         bg="#d4f8d4", activebackground="#b3e6b3", state="disabled")
+        # Buttons
+        ctk.CTkButton(root, text="Run Parser", command=self.run_parser).grid(row=9, column=0, padx=10, pady=20, sticky="e")
+        self.download_button = ctk.CTkButton(root, text="Save Parsed File", command=self.download_parsed_file, state="disabled")
         self.download_button.grid(row=8, column=2, padx=10, pady=20)
-        multi_help = tk.Label(root, text="?", fg="blue", cursor="hand2", font=("Arial", 11, "bold"))
-        multi_help.grid(row=8, column=2, padx=5, sticky="e")
-        multi_help.bind("<Enter>", lambda e: self.show_tooltip(e, "You can plot data without\nsaving parsed data"))
-        multi_help.bind("<Leave>", self.hide_tooltip)
 
+        ctk.CTkButton(root, text="Plot Data", command=self.plot_data).grid(row=9, column=2, padx=10, pady=10)
+        ctk.CTkButton(root, text="Exit", command=self.terminate_app).grid(row=16, column=1, columnspan=2, pady=10)
 
-        tk.Button(root, text="Plot Data", command=self.plot_data, bg="#d4f8d4", activebackground="#b3e6b3").grid(
-            row=9, column=2, padx=10, pady=10)
-        single_help = tk.Label(root, text="?", fg="blue", cursor="hand2", font=("Arial", 11, "bold"))
-        single_help.grid(row=9, column=2, padx=0, sticky="e")
-        single_help.bind("<Enter>", lambda e: self.show_tooltip(e, "specify scale for your plot"))
-        single_help.bind("<Leave>", self.hide_tooltip)
+        # Definicja plot_type
+        self.plot_type = ctk.StringVar(value="linear")  # Domyślnie "linear"
 
-        self.status_label = tk.Label(root, text="", fg="blue", font=("Arial", 10, "italic"))
-        self.status_label.grid(row=9, column=0, columnspan=2, pady=20, sticky="n")
+        # Radiobuttons dla wyboru typu wykresu
+        ctk.CTkRadioButton(
+            root, text="Linear", variable=self.plot_type, value="linear"
+        ).grid(row=10, column=1, padx=(140, 0), pady=5, sticky="e")
 
-        self.plot_type = tk.StringVar(value="linear")  # Domyślnie "linear"
-        linear_button = tk.Radiobutton(root, text="Linear", variable=self.plot_type, value="linear")
-        linear_button.grid(row=10, column=1, padx=(140,0), pady=5, sticky="e")  # Zwiększony padx
+        ctk.CTkRadioButton(
+            root, text="Logarithmic", variable=self.plot_type, value="log"
+        ).grid(row=10, column=2, padx=(40, 10), pady=5, sticky="w")
 
-        log_button = tk.Radiobutton(root, text="Logarithmic", variable=self.plot_type, value="log")
-        log_button.grid(row=10, column=2, padx=(40,10), pady=5, sticky="w")  # Zwiększony padx
-
-        tk.Label(root,
-                 text="You can select different columns for parsing and plotting without restarting the application."
-                      "\nRun Parser and Plot Data multiple times for different columns.",
-                 fg="gray").grid(row=13, column=0, columnspan=4, pady=10)
-
-        tk.Button(root, text="Exit", command=self.terminate_app, bg="#f8d4d4", activebackground="#e6b3b3").grid(
-            row=16, column=1, columnspan=2, pady=10)
-
-        # Definicja paska postępu
-        self.progress_var = tk.DoubleVar()
-        self.progress_bar = ttk.Progressbar(root, variable=self.progress_var, maximum=100)
+        # Progress Bar
+        self.progress_var = ctk.DoubleVar()
+        self.progress_bar = ctk.CTkProgressBar(root, variable=self.progress_var)
         self.progress_bar.grid(row=14, column=1, columnspan=1, padx=2, pady=2)
+        self.progress_bar.set(0)  # Ustawienie początkowego postępu na 0%
 
-        # Dodanie etykiety pokazującej liczbę przetworzonych plików
-        self.progress_label = tk.Label(root, text="Files processed: 0/0", fg="blue")
+        # Progress Label
+        self.progress_label = ctk.CTkLabel(root, text="Files processed: 0/0", fg_color="transparent")
         self.progress_label.grid(row=15, column=1, columnspan=1, pady=2)
 
-        # Załaduj domyślne kolumny
+        # Update default columns
         self.update_columns()
 
 
@@ -198,10 +167,13 @@ class App:
             self.column_checkboxes[col] = var
 
     def update_progress_callback(self, processed_count, total_files):
-        progress_percentage = (processed_count / total_files) * 100
-        self.progress_var.set(progress_percentage)
-        self.progress_label.config(text=f"Files processed: {processed_count}/{total_files}")
-        self.root.update_idletasks()
+        try:
+            progress_percentage = processed_count / total_files
+            self.progress_var.set(progress_percentage)
+            self.progress_label.configure(text=f"Files processed: {processed_count}/{total_files}")
+            self.root.update_idletasks()
+        except Exception as e:
+            print(f"Error in progress callback: {e}")  # Debugowanie błędów
 
     def run_parser(self):
         self.base_folder = self.folder_entry.get()
@@ -215,14 +187,15 @@ class App:
 
         mode = self.mode_var.get()
         if mode == "multi":
-            workers = int(self.workers_spin.get())
+            workers = int(self.workers_slider.get())
         else:
             workers = 1
 
         try:
-            self.status_label.config(text="", fg="orange")
+            self.status_label.configure(text="", text_color="orange")  # Resetowanie statusu
             self.root.update_idletasks()
 
+            # Logika parsowania danych
             parser = Parser(
                 self.base_folder,
                 self.additional_columns,
@@ -233,27 +206,29 @@ class App:
             self.parsed_data = parser.parse_data_no_merging(self.file_pattern,
                                                             progress_callback=self.update_progress_callback)
 
-
             elapsed_time = parser.end_time - parser.start_time
             row_count = len(self.parsed_data)
 
-            self.status_label.config(text=f"Time: {elapsed_time:.2f} sec. Rows: {row_count}",
-                                     fg="green")
-
+            # Ustawienie statusu na sukces
+            self.status_label.configure(
+                text=f"Time: {elapsed_time:.2f} sec. Rows: {row_count}",
+                text_color="green"
+            )
             messagebox.showinfo("Success",
-                                "Data parsed successfully. "
-                                "You can now download the parsed file or plot the data.")
-            self.download_button.config(state="normal")
+                                "Data parsed successfully. You can now download the parsed file or plot the data.")
+            self.download_button.configure(state="normal")
+
         except Exception as e:
-            self.status_label.config(text="Parsing failed.", fg="red")
+            # Wyświetl błąd, jeśli rzeczywiście wystąpił
+            self.status_label.configure(text="Parsing failed.", text_color="red")
             messagebox.showerror("Error", f"An error occurred: {e}")
 
     def toggle_workers(self):
         mode = self.mode_var.get()
         if mode == "multi":
-            self.workers_spin.config(state="normal")
+            self.workers_slider.config(state="normal")
         else:
-            self.workers_spin.config(state="disabled")
+            self.workers_slider.config(state="disabled")
 
     def download_parsed_file(self):
         if self.parsed_data is not None and not self.parsed_data.empty:
@@ -273,12 +248,12 @@ class App:
                     #self.status_label.config(text=f"File saved successfully: {output_file}", fg="green")
                     messagebox.showinfo("Success", f"File saved to: {output_file}")
                 except Exception as e:
-                    self.status_label.config(text="save failed.", fg="red")
+                    self.status_label.config(text="save failed.", text_color="red")
                     messagebox.showerror("Error", f"An error occurred while saving the file: {e}")
             else:
-                self.status_label.config(text="save canceled.", fg="blue")
+                self.status_label.config(text="save canceled.", text_color="blue")
         else:
-            self.status_label.config(text="No data to save.", fg="red")
+            self.status_label.config(text="No data to save.", text_color="red")
             messagebox.showerror("Error", "No data available to save.")
 
     def get_columns_0(self):
