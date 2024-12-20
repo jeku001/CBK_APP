@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
-from win_code.parser import Parser
+from parser import Parser
 from plot import Plots
 import os
 import matplotlib.pyplot as plt
@@ -84,12 +84,12 @@ class App:
         multi_radio.grid(row=7, column=1, sticky="w")
 
         # question marks
-        single_help = tk.Label(root, text="?", fg="blue", cursor="hand2", font=("Arial", 11, "bold"))
+        single_help = tk.Label(root, text="?", fg="blue", cursor="hand2", font=("arial", 12, "bold"))
         single_help.grid(row=6, column=1, padx=5)
         single_help.bind("<Enter>", lambda e: self.show_tooltip(e, "Single-process mode processes files one by one"))
         single_help.bind("<Leave>", self.hide_tooltip)
 
-        multi_help = tk.Label(root, text="?", fg="blue", cursor="hand2", font=("Arial", 11, "bold"))
+        multi_help = tk.Label(root, text="?", fg="blue", cursor="hand2", font=("arial", 12, "bold"))
         multi_help.grid(row=7, column=1, padx=5)
         multi_help.bind("<Enter>", lambda e: self.show_tooltip(e, "Parallel processing mode is more efficient for larger datasets"))
         multi_help.bind("<Leave>", self.hide_tooltip)
@@ -98,7 +98,7 @@ class App:
         tk.Label(root, text="Parallel tasks").grid(row=8, column=0, padx=10, pady=5, sticky="e")
         self.workers_spin = tk.Spinbox(root, from_=2, to=16, width=5, state="disabled")
         self.workers_spin.grid(row=8, column=1, padx=(10, 50), pady=5, sticky="w")
-        multi_help = tk.Label(root, text="?", fg="blue", cursor="hand2", font=("Arial", 11, "bold"))
+        multi_help = tk.Label(root, text="?", fg="blue", cursor="hand2", font=("arial", 12, "bold"))
         multi_help.grid(row=8, column=1, padx=(80, 0), sticky="w")
         multi_help.bind("<Enter>", lambda e: self.show_tooltip(e,
                                                                "Specify the number of parallel tasks to run. \nHigher values can speed up processing for large datasets\nbut may require more system resources.\n try 4."))
@@ -109,16 +109,16 @@ class App:
 
         self.download_button = tk.Button(root, text="save parsed File", command=self.download_parsed_file,
                                          bg="#d4f8d4", activebackground="#b3e6b3", state="disabled")
-        self.download_button.grid(row=8, column=2, padx=10, pady=20)
-        multi_help = tk.Label(root, text="?", fg="blue", cursor="hand2", font=("Arial", 11, "bold"))
-        multi_help.grid(row=8, column=2, padx=5, sticky="e")
+        self.download_button.grid(row=8, column=2, padx=5, pady=20)
+        multi_help = tk.Label(root, text="?", fg="blue", cursor="hand2", font=("arial", 12, "bold"))
+        multi_help.grid(row=8, column=2, padx=0, sticky="e")
         multi_help.bind("<Enter>", lambda e: self.show_tooltip(e, "You can plot data without\nsaving parsed data"))
         multi_help.bind("<Leave>", self.hide_tooltip)
 
 
         tk.Button(root, text="Plot Data", command=self.plot_data, bg="#d4f8d4", activebackground="#b3e6b3").grid(
             row=9, column=2, padx=10, pady=10)
-        single_help = tk.Label(root, text="?", fg="blue", cursor="hand2", font=("Arial", 11, "bold"))
+        single_help = tk.Label(root, text="?", fg="blue", cursor="hand2", font=("arial", 12, "bold"))
         single_help.grid(row=9, column=2, padx=0, sticky="e")
         single_help.bind("<Enter>", lambda e: self.show_tooltip(e, "specify scale for your plot"))
         single_help.bind("<Leave>", self.hide_tooltip)
@@ -392,3 +392,5 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = App(root)
     root.mainloop()
+
+#pyinstaller --onefile --console --hidden-import matplotlib --hidden-import matplotlib.backends --hidden-import PIL.ImageTk --hidden-import PIL._tkinter_finder app.py
