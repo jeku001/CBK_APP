@@ -140,4 +140,3 @@ linux_app/build/
 win_app/build/
 !win_app/dist/
 
-.idea/
