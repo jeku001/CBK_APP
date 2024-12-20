@@ -5,3 +5,5 @@ linux_app/build/
 !dist/
 win_app/build/
 !win_app/dist/
+
+.idea/
