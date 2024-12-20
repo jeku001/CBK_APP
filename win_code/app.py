@@ -1,24 +1,29 @@
 import tkinter as tk
 import customtkinter as ctk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox
 from parser import Parser
 from plot import Plots
 import os
 import matplotlib
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
+
 # Tkinter Application
 class App:
     def __init__(self, root):
         ctk.set_appearance_mode("System")  # Możesz wybrać "Light" lub "Dark"
         ctk.set_default_color_theme("blue")  # Motyw kolorystyczny
-        self.parsed_data = None
-        self.file_pattern = "0-Power Board"
+
         self.root = root
         self.root.title("Data Parser Application")
-        self.root.geometry("620x800")
-        self.status_label = ctk.CTkLabel(root, text="", text_color="blue", font=("Arial", 10, "italic"))
-        self.status_label.grid(row=9, column=0, columnspan=2, pady=20, sticky="n")
+        self.root.geometry("900x600")  # Ustawienie większego rozmiaru dla lepszego układu
+        self.parsed_data = None
+        self.file_pattern = "0-Power Board"
+        self.additional_columns = []
+
+        # Layout konfiguracji siatki
+        self.root.grid_rowconfigure(0, weight=1)
+        self.root.grid_columnconfigure(1, weight=1)
 
         # Mapowanie wzorców plików na listy kolumn
         self.pattern_columns = {
@@ -34,122 +39,100 @@ class App:
             "9-Header Board": self.get_columns_9()
         }
 
-        # Label
-        ctk.CTkLabel(
-            root,
-            text="Please click Browse to select the 'WOD/Parsed' folder with data to begin.",
-            font=("Arial", 10, "bold")
-        ).grid(row=0, column=0, columnspan=4, pady=5)
+        # Środkowy panel (status i wybór kolumn)
+        self.center_frame = ctk.CTkFrame(self.root, corner_radius=10)
+        self.center_frame.grid(row=0, column=1, sticky="nswe", padx=10, pady=10)
+        self.center_frame.grid_rowconfigure(2, weight=1)
+        self.center_frame.grid_columnconfigure(1, weight=1)
 
-        # Folder Entry and Browse Button
-        ctk.CTkLabel(root, text="Base Folder").grid(row=1, column=0, padx=10, pady=5, sticky="e")
-        self.folder_entry = ctk.CTkEntry(root, width=400)
-        self.folder_entry.grid(row=1, column=1, padx=10, pady=5, sticky="w")
-        ctk.CTkButton(root, text="Browse", command=self.browse_folder).grid(row=1, column=2, padx=10, pady=5, sticky="w")
+        # Etykieta postępu
+        self.progress_label = ctk.CTkLabel(self.center_frame, text="Files processed: 0/0", font=("Arial", 10))
+        self.progress_label.grid(row=5, column=0, columnspan=3, pady=5)
 
-        # Start & End Year
-        ctk.CTkLabel(root, text="Start Year").grid(row=2, column=0, padx=10, pady=5, sticky="e")
-        self.start_year_entry = ctk.CTkEntry(root, width=100)
-        self.start_year_entry.grid(row=2, column=1, padx=(0, 10), pady=5, sticky="w")
+        # Lewy panel (parsowanie)
+        self.left_frame = ctk.CTkFrame(self.root, width=200, corner_radius=10)
+        self.left_frame.grid(row=0, column=0, sticky="nswe", padx=10, pady=10)
+        self.left_frame.grid_rowconfigure(5, weight=1)
 
-        ctk.CTkLabel(root, text="End Year").grid(row=3, column=0, padx=10, pady=5, sticky="e")
-        self.end_year_entry = ctk.CTkEntry(root, width=100)
-        self.end_year_entry.grid(row=3, column=1, padx=(0, 10), pady=5, sticky="w")
+        ctk.CTkLabel(self.left_frame, text="Parsing Options", font=("Arial", 16, "bold")).pack(pady=10)
+        ctk.CTkLabel(self.left_frame, text="Base Folder").pack(pady=5)
+        self.folder_entry = ctk.CTkEntry(self.left_frame, width=200)
+        self.folder_entry.pack(pady=5)
+        ctk.CTkButton(self.left_frame, text="Browse", command=self.browse_folder).pack(pady=5)
 
-        # File Pattern ComboBox
-        ctk.CTkLabel(root, text="File Pattern").grid(row=4, column=0, padx=10, pady=5, sticky="e")
-        self.pattern_combo = ctk.CTkComboBox(root, values=list(self.pattern_columns.keys()), command=self.on_pattern_selected)
-        self.pattern_combo.grid(row=4, column=1, columnspan=2, padx=10, pady=5, sticky="w")
+        ctk.CTkLabel(self.left_frame, text="Start Year").pack(pady=5)
+        self.start_year_entry = ctk.CTkEntry(self.left_frame, width=100)
+        self.start_year_entry.pack(pady=5)
+
+        ctk.CTkLabel(self.left_frame, text="End Year").pack(pady=5)
+        self.end_year_entry = ctk.CTkEntry(self.left_frame, width=100)
+        self.end_year_entry.pack(pady=5)
+
+        ctk.CTkButton(self.left_frame, text="Run Parser", command=self.run_parser).pack(pady=10)
+
+        ctk.CTkLabel(self.center_frame, text="File Pattern").grid(row=0, column=0, padx=10, pady=5, sticky="e")
+        self.pattern_combo = ctk.CTkComboBox(self.center_frame, values=list(self.pattern_columns.keys()), command=self.on_pattern_selected)
+        self.pattern_combo.grid(row=0, column=1, padx=10, pady=5, sticky="w")
         self.pattern_combo.set("0-Power Board")
 
-        # Columns Frame with Scrollable Area
-        self.column_frame = ctk.CTkFrame(root)
-        self.column_frame.grid(row=5, column=1, columnspan=3, padx=10, pady=5, sticky="w")
+        ctk.CTkLabel(self.center_frame, text="Parallel tasks").grid(row=1, column=0, padx=10, pady=5, sticky="e")
+        self.workers_slider = ctk.CTkSlider(self.center_frame, from_=2, to=16, number_of_steps=14, command=self.update_worker_label)
+        self.workers_slider.grid(row=1, column=1, padx=10, pady=5, sticky="w")
+        self.workers_slider.set(2)
 
+        self.worker_label = ctk.CTkLabel(self.center_frame, text="Tasks: 2")
+        self.worker_label.grid(row=1, column=2, padx=10, pady=5, sticky="w")
+
+        self.column_frame = ctk.CTkFrame(self.center_frame)
+        self.column_frame.grid(row=2, column=0, columnspan=3, pady=10, padx=10, sticky="nswe")
+
+        # Scrollable Frame
         self.canvas = ctk.CTkCanvas(self.column_frame, width=200, height=200)
+        self.scrollbar = ctk.CTkScrollbar(self.column_frame, orientation="vertical", command=self.canvas.yview)
         self.scrollable_frame = ctk.CTkFrame(self.canvas)
 
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        )
+
         self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
-        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
 
         self.canvas.pack(side="left", fill="both", expand=True)
-        scrollbar = ctk.CTkScrollbar(self.column_frame, orientation="vertical", command=self.canvas.yview)
-        scrollbar.pack(side="right", fill="y")
-        self.canvas.configure(yscrollcommand=scrollbar.set)
+        self.scrollbar.pack(side="right", fill="y")
 
-        # Radio Buttons for Processing Mode
-        self.mode_var = ctk.StringVar(value="single")
-        ctk.CTkLabel(root, text="Processing Mode").grid(row=6, column=0, padx=10, pady=5, sticky="e")
-        ctk.CTkRadioButton(root, text="Single-process mode", variable=self.mode_var, value="single", command=self.toggle_workers).grid(row=6, column=1, sticky="w")
-        ctk.CTkRadioButton(root, text="Parallel processing mode", variable=self.mode_var, value="multi", command=self.toggle_workers).grid(row=7, column=1, sticky="w")
+        self.status_label = ctk.CTkLabel(self.center_frame, text="", text_color="blue", font=("Arial", 10, "italic"))
+        self.status_label.grid(row=3, column=0, columnspan=3, pady=10)
 
-        # Slider for Workers
-        ctk.CTkLabel(root, text="Parallel tasks").grid(row=8, column=0, padx=10, pady=5, sticky="e")
-        self.workers_slider = ctk.CTkSlider(root, from_=2, to=16, number_of_steps=14)
-        self.workers_slider.grid(row=8, column=1, padx=(10, 50), pady=5, sticky="w")
-        self.workers_slider.set(2)  # Ustawienie domyślnej wartości na 2
+        # Prawy panel (zapis i wykresy)
+        self.right_frame = ctk.CTkFrame(self.root, width=200, corner_radius=10)
+        self.right_frame.grid(row=0, column=2, sticky="nswe", padx=10, pady=10)
+        self.right_frame.grid_rowconfigure(3, weight=1)
 
-        # Buttons
-        ctk.CTkButton(root, text="Run Parser", command=self.run_parser).grid(row=9, column=0, padx=10, pady=20, sticky="e")
-        self.download_button = ctk.CTkButton(root, text="Save Parsed File", command=self.download_parsed_file, state="disabled")
-        self.download_button.grid(row=8, column=2, padx=10, pady=20)
+        ctk.CTkLabel(self.right_frame, text="Plot and Save", font=("Arial", 16, "bold")).pack(pady=10)
+        self.download_button = ctk.CTkButton(self.right_frame, text="Save Parsed File", command=self.download_parsed_file, state="disabled")
+        self.download_button.pack(pady=10)
+        ctk.CTkButton(self.right_frame, text="Plot Data", command=self.plot_data).pack(pady=10)
+        ctk.CTkButton(self.right_frame, text="Exit", command=self.terminate_app).pack(pady=10)
 
-        ctk.CTkButton(root, text="Plot Data", command=self.plot_data).grid(row=9, column=2, padx=10, pady=10)
-        ctk.CTkButton(root, text="Exit", command=self.terminate_app).grid(row=16, column=1, columnspan=2, pady=10)
-
-        # Definicja plot_type
-        self.plot_type = ctk.StringVar(value="linear")  # Domyślnie "linear"
-
-        # Radiobuttons dla wyboru typu wykresu
-        ctk.CTkRadioButton(
-            root, text="Linear", variable=self.plot_type, value="linear"
-        ).grid(row=10, column=1, padx=(140, 0), pady=5, sticky="e")
-
-        ctk.CTkRadioButton(
-            root, text="Logarithmic", variable=self.plot_type, value="log"
-        ).grid(row=10, column=2, padx=(40, 10), pady=5, sticky="w")
-
-        # Progress Bar
-        self.progress_var = ctk.DoubleVar()
-        self.progress_bar = ctk.CTkProgressBar(root, variable=self.progress_var)
-        self.progress_bar.grid(row=14, column=1, columnspan=1, padx=2, pady=2)
-        self.progress_bar.set(0)  # Ustawienie początkowego postępu na 0%
-
-        # Progress Label
-        self.progress_label = ctk.CTkLabel(root, text="Files processed: 0/0", fg_color="transparent")
-        self.progress_label.grid(row=15, column=1, columnspan=1, pady=2)
-
-        # Update default columns
+        # Aktualizacja kolumn
         self.update_columns()
 
+        # Tryb przetwarzania
+        self.mode_var = ctk.StringVar(value="single")
 
-    def show_tooltip(self, event, text):
-        # Create a tooltip window
-        self.tooltip = tk.Toplevel()
-        self.tooltip.overrideredirect(True)  # Remove window decorations
-        self.tooltip.geometry(f"+{event.x_root+10}+{event.y_root+10}")  # Position near cursor
-        label = tk.Label(self.tooltip, text=text, background="yellow", relief="solid", borderwidth=1, font=("Arial", 10))
-        label.pack()
+        # Pasek postępu
+        self.progress_var = tk.DoubleVar()
+        self.progress_bar = ctk.CTkProgressBar(self.center_frame, variable=self.progress_var)
+        self.progress_bar.grid(row=4, column=0, columnspan=3, pady=5)
+        self.progress_bar.set(0)
 
-    def hide_tooltip(self, event):
-        # Destroy the tooltip window
-        if hasattr(self, "tooltip"):
-            self.tooltip.destroy()
+        # Typ wykresu (Linear / Log)
+        self.plot_type = ctk.StringVar(value="linear")
 
-    def on_pattern_selected(self, event=None):
-        self.update_columns(event)
-        self.update_file_pattern(event)
-
-    def update_file_pattern(self, event=None):
-        self.file_pattern = self.pattern_combo.get()
-
-
-    def browse_folder(self):
-        parent_dir = os.path.dirname(os.getcwd())
-        folder_selected = filedialog.askdirectory(initialdir=parent_dir, title="Select Folder")
-        if folder_selected:
-            self.folder_entry.delete(0, tk.END)
-            self.folder_entry.insert(0, folder_selected)
+    def update_worker_label(self, value):
+        self.worker_label.configure(text=f"Tasks: {int(value)}")
 
     def update_columns(self, event=None):
         # Wyczyść istniejące elementy w scrollable_frame
@@ -162,9 +145,12 @@ class App:
 
         for col in columns:
             var = tk.BooleanVar(value=False)
-            chk = tk.Checkbutton(self.scrollable_frame, text=col, variable=var, anchor="w", width=50)
+            chk = ctk.CTkCheckBox(self.scrollable_frame, text=col, variable=var, width=50)
             chk.pack(fill="x", pady=1)
             self.column_checkboxes[col] = var
+
+    def on_pattern_selected(self, event=None):
+        self.update_columns(event)
 
     def update_progress_callback(self, processed_count, total_files):
         try:
@@ -173,7 +159,14 @@ class App:
             self.progress_label.configure(text=f"Files processed: {processed_count}/{total_files}")
             self.root.update_idletasks()
         except Exception as e:
-            print(f"Error in progress callback: {e}")  # Debugowanie błędów
+            print(f"Error in progress callback: {e}")
+
+    def browse_folder(self):
+        parent_dir = os.path.dirname(os.getcwd())
+        folder_selected = filedialog.askdirectory(initialdir=parent_dir, title="Select Folder")
+        if folder_selected:
+            self.folder_entry.delete(0, tk.END)
+            self.folder_entry.insert(0, folder_selected)
 
     def run_parser(self):
         self.base_folder = self.folder_entry.get()
