@@ -1,7 +1,6 @@
-import time
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
-from parser import Parser
+from win_code.parser import Parser
 from plot import Plots
 import os
 import matplotlib.pyplot as plt
@@ -11,6 +10,7 @@ class App:
     def __init__(self, root):
         self.root = root
         self.root.title("Data Parser Application")
+        self.root.geometry("620x800")
         #self.base_folder = ""
         self.file_pattern = "0-Power Board"
         self.parsed_data = None
@@ -61,7 +61,7 @@ class App:
         self.column_frame = tk.Frame(root)
         self.column_frame.grid(row=5, column=1, columnspan=3, padx=10, pady=5, sticky="w")
 
-        self.canvas = tk.Canvas(self.column_frame, width=400, height=200)
+        self.canvas = tk.Canvas(self.column_frame, width=200, height=200)
         self.scrollbar = tk.Scrollbar(self.column_frame, orient="vertical", command=self.canvas.yview)
         self.scrollable_frame = tk.Frame(self.canvas)
 
@@ -84,21 +84,21 @@ class App:
         multi_radio.grid(row=7, column=1, sticky="w")
 
         # question marks
-        single_help = tk.Label(root, text="?", fg="blue", cursor="hand2")
+        single_help = tk.Label(root, text="?", fg="blue", cursor="hand2", font=("Arial", 11, "bold"))
         single_help.grid(row=6, column=1, padx=5)
         single_help.bind("<Enter>", lambda e: self.show_tooltip(e, "Single-process mode processes files one by one"))
         single_help.bind("<Leave>", self.hide_tooltip)
 
-        multi_help = tk.Label(root, text="?", fg="blue", cursor="hand2")
+        multi_help = tk.Label(root, text="?", fg="blue", cursor="hand2", font=("Arial", 11, "bold"))
         multi_help.grid(row=7, column=1, padx=5)
         multi_help.bind("<Enter>", lambda e: self.show_tooltip(e, "Parallel processing mode is more efficient for larger datasets"))
         multi_help.bind("<Leave>", self.hide_tooltip)
 
         # Label for parallel tasks
         tk.Label(root, text="Parallel tasks").grid(row=8, column=0, padx=10, pady=5, sticky="e")
-        self.workers_spin = tk.Spinbox(root, from_=1, to=32, width=5, state="disabled")
+        self.workers_spin = tk.Spinbox(root, from_=2, to=16, width=5, state="disabled")
         self.workers_spin.grid(row=8, column=1, padx=(10, 50), pady=5, sticky="w")
-        multi_help = tk.Label(root, text="?", fg="blue", cursor="hand2")
+        multi_help = tk.Label(root, text="?", fg="blue", cursor="hand2", font=("Arial", 11, "bold"))
         multi_help.grid(row=8, column=1, padx=(80, 0), sticky="w")
         multi_help.bind("<Enter>", lambda e: self.show_tooltip(e,
                                                                "Specify the number of parallel tasks to run. \nHigher values can speed up processing for large datasets\nbut may require more system resources.\n try 4."))
@@ -110,16 +110,16 @@ class App:
         self.download_button = tk.Button(root, text="save parsed File", command=self.download_parsed_file,
                                          bg="#d4f8d4", activebackground="#b3e6b3", state="disabled")
         self.download_button.grid(row=8, column=2, padx=10, pady=20)
-        multi_help = tk.Label(root, text="?", fg="blue", cursor="hand2")
-        multi_help.grid(row=8, column=3, padx=5, sticky="w")
+        multi_help = tk.Label(root, text="?", fg="blue", cursor="hand2", font=("Arial", 11, "bold"))
+        multi_help.grid(row=8, column=2, padx=5, sticky="e")
         multi_help.bind("<Enter>", lambda e: self.show_tooltip(e, "You can plot data without\nsaving parsed data"))
         multi_help.bind("<Leave>", self.hide_tooltip)
 
 
         tk.Button(root, text="Plot Data", command=self.plot_data, bg="#d4f8d4", activebackground="#b3e6b3").grid(
             row=9, column=2, padx=10, pady=10)
-        single_help = tk.Label(root, text="?", fg="blue", cursor="hand2")
-        single_help.grid(row=9, column=3, padx=0, sticky="w")
+        single_help = tk.Label(root, text="?", fg="blue", cursor="hand2", font=("Arial", 11, "bold"))
+        single_help.grid(row=9, column=2, padx=0, sticky="e")
         single_help.bind("<Enter>", lambda e: self.show_tooltip(e, "specify scale for your plot"))
         single_help.bind("<Leave>", self.hide_tooltip)
 
@@ -139,16 +139,16 @@ class App:
                  fg="gray").grid(row=13, column=0, columnspan=4, pady=10)
 
         tk.Button(root, text="Exit", command=self.terminate_app, bg="#f8d4d4", activebackground="#e6b3b3").grid(
-            row=14, column=1, columnspan=2, pady=10)
+            row=16, column=1, columnspan=2, pady=10)
 
         # Definicja paska postępu
         self.progress_var = tk.DoubleVar()
         self.progress_bar = ttk.Progressbar(root, variable=self.progress_var, maximum=100)
-        self.progress_bar.grid(row=10, column=0, columnspan=1, padx=2, pady=2)
+        self.progress_bar.grid(row=14, column=1, columnspan=1, padx=2, pady=2)
 
         # Dodanie etykiety pokazującej liczbę przetworzonych plików
         self.progress_label = tk.Label(root, text="Files processed: 0/0", fg="blue")
-        self.progress_label.grid(row=11, column=0, columnspan=1, pady=2, sticky="e")
+        self.progress_label.grid(row=15, column=1, columnspan=1, pady=2)
 
         # Załaduj domyślne kolumny
         self.update_columns()
@@ -237,7 +237,7 @@ class App:
             elapsed_time = parser.end_time - parser.start_time
             row_count = len(self.parsed_data)
 
-            self.status_label.config(text=f"Parsing completed in {elapsed_time:.2f} seconds.\n Rows: {row_count}",
+            self.status_label.config(text=f"Time: {elapsed_time:.2f} sec. Rows: {row_count}",
                                      fg="green")
 
             messagebox.showinfo("Success",
@@ -265,12 +265,12 @@ class App:
             if output_file:
                 try:
 
-                    self.status_label.config(text="Saving...", fg="orange")
+                    #self.status_label.config(text="Saving...", fg="orange")
                     self.root.update_idletasks()
 
                     self.parsed_data.to_csv(output_file, index=False)
 
-                    self.status_label.config(text=f"File saved successfully: {output_file}", fg="green")
+                    #self.status_label.config(text=f"File saved successfully: {output_file}", fg="green")
                     messagebox.showinfo("Success", f"File saved to: {output_file}")
                 except Exception as e:
                     self.status_label.config(text="save failed.", fg="red")
@@ -333,7 +333,7 @@ class App:
 
         plot_window = tk.Toplevel(self.root)
         plot_window.title("Select Columns to Plot")
-        plot_window.geometry("400x300")
+        plot_window.geometry("200x400")
 
         tk.Label(plot_window, text="Select Columns for Plotting:").pack(pady=10)
 
@@ -386,6 +386,9 @@ class App:
 
 
 if __name__ == "__main__":
+    import multiprocessing
+    multiprocessing.freeze_support()
+
     root = tk.Tk()
     app = App(root)
     root.mainloop()

@@ -15,7 +15,7 @@
 ---
 
 ## Overview
-This application is designed to help Scientists from the polish Space Research Centre efficiently process housekeeping datasets from the Lem and Heweliusz satellites. The primary goal is to enable the extraction and visualization of specific data columns from CSV files containing over 30GB of satellite telemetry data.
+This application is designed to help Scientists from the Polish Space Research Centre (CBK) efficiently process housekeeping datasets from the Lem and Heweliusz satellites. The primary goal is to enable the extraction and visualization of specific data columns from CSV files containing over 30GB of satellite telemetry data.
 
 Key features include:
 - Parsing and filtering CSV data based on selected columns.
@@ -26,7 +26,7 @@ Key features include:
 ---
 
 ### Source of Data
-The data originates from the Le and Heweliusz satellites, launched as part of a collaborative project to collect telemetry data. However, the raw data cannot be made publicly available.
+The data originates from the Lem and Heweliusz satellites. However, the raw data cannot be made publicly available.
 
 - **LEM Satellite**: A Polish satellite launched in 2013, primarily designed for stellar photometry and astrophysical observations.
 - **HEWELIUSZ Satellite**: Launched in 2014, Heweliusz complements Lem's mission with additional capabilities for space environment monitoring. Housekeeping dataset spans from their launch dates to the present, amounting to over 30GB of CSV files.
@@ -63,10 +63,10 @@ Each file contains time-series data with columns such as:
 To run the application, follow these steps:
 
 1. **Download the application**
-   - Obtain the `app.exe` file for Windows or `app` for Linux, located in the `win_app` and `linux_app` directories respectively.
+   - Download `win_app` or `linux_app`.
 
 2. **Run the executable**
-   - double-click `app.exe` or `app` to launch the application.
+   - double-click `app.exe` located in win_app or `app` located in linux_app to launch the application.
 
 3. **System Requirements**
    - At least 8GB of RAM (recommended for larger datasets).
@@ -77,12 +77,12 @@ To run the application, follow these steps:
 
 ### Step 1: Loading Data
 1. Launch the application by running the executable file.
-2. Click the **Browse** button to select the folder containing your satellite data files.
+2. Click the **Browse** button to select the folder containing your satellite data files. For efficiency, select WOD/Parsed specifically.
 
 ### Step 2: Configuring the Parser
 1. Use the **Start Year** and **End Year** fields to filter data by year. These fields are optional and can be left empty to include all available data.
 2. Select a **File Pattern** to narrow down the type of data you want to parse (e.g., "0-Power Board").
-3. Check the desired columns in the **Select Columns** section to include them in the output.
+3. Check the desired columns in the Select Columns section to include them in the output. The first three columns, which pertain to the reading timestamp, are included by default and dont need to be selected manually.
 4. Choose a processing mode:
    - **Single-process mode**: Processes files one by one (useful for small datasets).
    - **Parallel processing mode**: Enables faster processing by using multiple CPU cores. You can specify the number of tasks in the **Parallel Tasks** field.
@@ -109,4 +109,4 @@ To run the application, follow these steps:
 ## Acknowledgements
 This tool was developed to simplify the analysis of satellite telemetry data. Special thanks to the teams behind LEM and HEWELIUSZ for providing invaluable satellite telemetry data.
 
-For further inquiries or bug reports, please contact [jedrzejslupski@gmail.com].
+For further inquiries or bug reports, please contact jedrzejslupski@gmail.com
