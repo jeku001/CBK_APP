@@ -75,7 +75,6 @@ class App:
         self.end_year_entry = ctk.CTkEntry(self.left_frame, width=100)
         self.end_year_entry.pack(pady=5)
 
-        ctk.CTkButton(self.left_frame, text="Run Parser", command=self.run_parser).pack(pady=20)
 
         ctk.CTkLabel(self.center_frame, text="File Pattern").grid(row=0, column=0, padx=10, pady=5, sticky="e")
         self.pattern_combo = ctk.CTkComboBox(self.center_frame, values=list(self.pattern_columns.keys()), command=self.on_pattern_selected)
@@ -89,9 +88,6 @@ class App:
         self.workers_slider.configure(state="disabled")  # Początkowo dezaktywowany
         self.worker_label = ctk.CTkLabel(self.left_frame, text="Workers: 2")
         self.worker_label.pack(pady=10)
-
-        self.worker_label = ctk.CTkLabel(self.center_frame, text="Tasks: 2")
-        self.worker_label.grid(row=1, column=2, padx=10, pady=5, sticky="w")
 
         self.column_frame = ctk.CTkFrame(self.center_frame)
         self.column_frame.grid(row=2, column=0, columnspan=3, pady=10, padx=10, sticky="nswe")
@@ -111,6 +107,7 @@ class App:
                                                     command=self.toggle_workers)
         self.multi_mode_button.pack(side="left")
 
+        ctk.CTkButton(self.left_frame, text="Run Parser", command=self.run_parser).pack(pady=20)
         # Scrollable Frame
         self.canvas = ctk.CTkCanvas(self.column_frame, width=200, height=200)
         self.scrollbar = ctk.CTkScrollbar(self.column_frame, orientation="vertical", command=self.canvas.yview)
