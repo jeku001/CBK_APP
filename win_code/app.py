@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
-from win_code.parser import Parser
+from parser import Parser
 from plot import Plots
 import os
 import matplotlib.pyplot as plt
