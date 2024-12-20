@@ -108,13 +108,17 @@ class App:
         # Prawy panel (zapis i wykresy)
         self.right_frame = ctk.CTkFrame(self.root, width=200, corner_radius=10)
         self.right_frame.grid(row=0, column=2, sticky="nswe", padx=10, pady=10)
-        self.right_frame.grid_rowconfigure(3, weight=1)
+        self.right_frame.grid_rowconfigure(4, weight=1)  # Zmiana tutaj, aby przycisk Exit był na dole
 
         ctk.CTkLabel(self.right_frame, text="Plot and Save", font=("Arial", 16, "bold")).pack(pady=10)
-        self.download_button = ctk.CTkButton(self.right_frame, text="Save Parsed File", command=self.download_parsed_file, state="disabled")
+        self.download_button = ctk.CTkButton(self.right_frame, text="Save Parsed File",
+                                             command=self.download_parsed_file, state="disabled")
         self.download_button.pack(pady=10)
         ctk.CTkButton(self.right_frame, text="Plot Data", command=self.plot_data).pack(pady=10)
-        ctk.CTkButton(self.right_frame, text="Exit", command=self.terminate_app).pack(pady=10)
+
+        # Przycisk Exit teraz umieszczony na dole i z lekko czerwonym kolorem
+        exit_button = ctk.CTkButton(self.right_frame, text="Exit", command=self.terminate_app, fg_color="#f73e3e")
+        exit_button.pack(side="bottom", pady=10)
 
         # Aktualizacja kolumn
         self.update_columns()
