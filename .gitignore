@@ -1,6 +1,9 @@
 *.csv
 UAM_BRITE/
-<<<<<<< HEAD
+!linux_app/
+!win_app/
+!linux_code
+!win_code
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

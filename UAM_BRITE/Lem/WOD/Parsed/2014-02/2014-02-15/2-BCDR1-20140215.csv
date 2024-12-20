@@ -1,2 +1,0 @@
-'Date (YYYY-MM-DD HH:MM:SS),'Date Millisecond Offset,'Date (J2000 mseconds),'Reset Reason,'Reset Count,'SEU Count,'Ping Pointer,'Control Pointer,'Battery Temperature(°C),'Heater On,'Mode,'Bus Voltage(V),'Battery Voltage(V),'Battery Current(mA),'State of Charge(mA*h),'Bus Target(V),'Discharge Command
-2014-02-15 19:10:29,716,445763496900,0,0,0,0,0,14.6425,0,Fixed,4.2025,3.76228,1351.58,107.011,4.2,0
