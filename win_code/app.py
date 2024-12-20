@@ -52,6 +52,13 @@ class App:
         # Lewy panel (parsowanie)
         self.left_frame = ctk.CTkFrame(self.root, width=200, corner_radius=10)
         self.left_frame.grid(row=0, column=0, sticky="nswe", padx=10, pady=10)
+        self.left_frame.grid_rowconfigure(7, weight=1)
+
+        ctk.CTkLabel(self.left_frame, text="Parsing Options", font=("Arial", 16, "bold")).pack(pady=10)
+        ctk.CTkLabel(self.left_frame, text="Base Folder").pack(pady=5)
+
+        self.left_frame = ctk.CTkFrame(self.root, width=200, corner_radius=10)
+        self.left_frame.grid(row=0, column=0, sticky="nswe", padx=10, pady=10)
         self.left_frame.grid_rowconfigure(5, weight=1)
 
         ctk.CTkLabel(self.left_frame, text="Parsing Options", font=("Arial", 16, "bold")).pack(pady=10)
@@ -68,23 +75,41 @@ class App:
         self.end_year_entry = ctk.CTkEntry(self.left_frame, width=100)
         self.end_year_entry.pack(pady=5)
 
-        ctk.CTkButton(self.left_frame, text="Run Parser", command=self.run_parser).pack(pady=10)
+        ctk.CTkButton(self.left_frame, text="Run Parser", command=self.run_parser).pack(pady=20)
 
         ctk.CTkLabel(self.center_frame, text="File Pattern").grid(row=0, column=0, padx=10, pady=5, sticky="e")
         self.pattern_combo = ctk.CTkComboBox(self.center_frame, values=list(self.pattern_columns.keys()), command=self.on_pattern_selected)
         self.pattern_combo.grid(row=0, column=1, padx=10, pady=5, sticky="w")
         self.pattern_combo.set("0-Power Board")
 
-        ctk.CTkLabel(self.center_frame, text="Parallel tasks").grid(row=1, column=0, padx=10, pady=5, sticky="e")
-        self.workers_slider = ctk.CTkSlider(self.center_frame, from_=2, to=16, number_of_steps=14, command=self.update_worker_label)
-        self.workers_slider.grid(row=1, column=1, padx=10, pady=5, sticky="w")
-        self.workers_slider.set(2)
+        # Suwak dla zadań równoległych
+        self.workers_slider = ctk.CTkSlider(self.left_frame, from_=2, to=16,
+                                            number_of_steps=14,command=self.update_worker_label)
+        self.workers_slider.pack(pady=10)
+        self.workers_slider.configure(state="disabled")  # Początkowo dezaktywowany
+        self.worker_label = ctk.CTkLabel(self.left_frame, text="Workers: 2")
+        self.worker_label.pack(pady=10)
 
         self.worker_label = ctk.CTkLabel(self.center_frame, text="Tasks: 2")
         self.worker_label.grid(row=1, column=2, padx=10, pady=5, sticky="w")
 
         self.column_frame = ctk.CTkFrame(self.center_frame)
         self.column_frame.grid(row=2, column=0, columnspan=3, pady=10, padx=10, sticky="nswe")
+
+        # Radio Buttons dla trybów Single i Multi
+        self.mode_frame = ctk.CTkFrame(self.left_frame)
+        self.mode_frame.pack(pady=10)
+        self.mode_var = tk.StringVar(value="single")  # Zmienna przechowująca wybrany tryb
+
+        self.single_mode_button = ctk.CTkRadioButton(self.mode_frame, text="Single Mode",
+                                                     variable=self.mode_var, value="single",
+                                                     command=self.toggle_workers)
+        self.single_mode_button.pack(side="left")
+
+        self.multi_mode_button = ctk.CTkRadioButton(self.mode_frame, text="Multi Mode",
+                                                    variable=self.mode_var, value="multi",
+                                                    command=self.toggle_workers)
+        self.multi_mode_button.pack(side="left")
 
         # Scrollable Frame
         self.canvas = ctk.CTkCanvas(self.column_frame, width=200, height=200)
@@ -122,9 +147,6 @@ class App:
 
         # Aktualizacja kolumn
         self.update_columns()
-
-        # Tryb przetwarzania
-        self.mode_var = ctk.StringVar(value="single")
 
         # Pasek postępu
         self.progress_var = tk.DoubleVar()
@@ -222,10 +244,17 @@ class App:
 
     def toggle_workers(self):
         mode = self.mode_var.get()
+        print(f"Toggle workers called, mode: {mode}")  # Debug print
         if mode == "multi":
-            self.workers_slider.config(state="normal")
+            self.workers_slider.configure(state="normal")
+            print("Slider enabled")  # Debug print
         else:
-            self.workers_slider.config(state="disabled")
+            self.workers_slider.configure(state="disabled")
+            print("Slider disabled")  # Debug print
+
+    def update_worker_label(self, value):
+        if self.mode_var.get() == "multi":
+            self.worker_label.configure(text=f"Workers: {int(value)}")
 
     def download_parsed_file(self):
         if self.parsed_data is not None and not self.parsed_data.empty:
@@ -245,12 +274,12 @@ class App:
                     #self.status_label.config(text=f"File saved successfully: {output_file}", fg="green")
                     messagebox.showinfo("Success", f"File saved to: {output_file}")
                 except Exception as e:
-                    self.status_label.config(text="save failed.", text_color="red")
+                    self.status_label.configure(text="save failed.", text_color="red")
                     messagebox.showerror("Error", f"An error occurred while saving the file: {e}")
             else:
-                self.status_label.config(text="save canceled.", text_color="blue")
+                self.status_label.configure(text="save canceled.", text_color="blue")
         else:
-            self.status_label.config(text="No data to save.", text_color="red")
+            self.status_label.configure(text="No data to save.", text_color="red")
             messagebox.showerror("Error", "No data available to save.")
 
     def get_columns_0(self):
