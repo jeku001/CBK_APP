@@ -141,10 +141,24 @@ class App:
         self.setup_plot_options() #inicjowanie ramki na typ skali
 
 
-        # Column Listbox for plotting
-        self.plot_columns_listbox = tk.Listbox(self.right_frame, selectmode="multiple", height=10)
-        self.plot_columns_listbox.pack(fill="both", expand=True, padx=10, pady=10)
+        # Stworzenie scrollable frame dla kolumn do plotowania
+        self.plot_column_frame = ctk.CTkFrame(self.right_frame)
+        self.plot_column_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
+        self.plot_column_canvas = ctk.CTkCanvas(self.plot_column_frame, width=200, height=200)
+        self.plot_column_scrollbar = ctk.CTkScrollbar(self.plot_column_frame, orientation="vertical", command=self.plot_column_canvas.yview)
+        self.plot_column_scrollable_frame = ctk.CTkFrame(self.plot_column_canvas)
+
+        self.plot_column_scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.plot_column_canvas.configure(scrollregion=self.plot_column_canvas.bbox("all"))
+        )
+
+        self.plot_column_canvas.create_window((0, 0), window=self.plot_column_scrollable_frame, anchor="nw")
+        self.plot_column_canvas.configure(yscrollcommand=self.plot_column_scrollbar.set)
+
+        self.plot_column_canvas.pack(side="left", fill="both", expand=True)
+        self.plot_column_scrollbar.pack(side="right", fill="y")
         ctk.CTkButton(self.right_frame, text="Plot Selected Columns", command=self.plot_selected_columns).pack(pady=10)
 
         # Przycisk Exit teraz umieszczony na dole i z lekko czerwonym kolorem
@@ -335,16 +349,18 @@ class App:
 
     def update_plot_columns_list(self):
         # Czyści wcześniejsze elementy listy kolumn do plotowania
-        self.plot_columns_listbox.delete(0, tk.END)
+        for widget in self.plot_column_scrollable_frame.winfo_children():
+            widget.destroy()
 
         if self.parsed_data is not None and not self.parsed_data.empty:
-            # Dodaj kolumny danych od indeksu 3 do listboxa (zakładając, że kolumny danych zaczynają się od indeksu 3)
             for col in self.parsed_data.columns[3:]:
-                self.plot_columns_listbox.insert(tk.END, col)
+                var = tk.BooleanVar(value=False)
+                chk = ctk.CTkCheckBox(self.plot_column_scrollable_frame, text=col, variable=var)
+                chk.pack(fill="x", pady=1)
+                self.column_checkboxes[col] = var
 
     def plot_selected_columns(self):
-        selected_indices = self.plot_columns_listbox.curselection()
-        selected_columns = [self.plot_columns_listbox.get(i) for i in selected_indices]
+        selected_columns = [col for col, var in self.column_checkboxes.items() if var.get()]
 
         if not selected_columns:
             messagebox.showerror("Error", "No columns selected for plotting.")
@@ -352,8 +368,6 @@ class App:
 
         # Przekazanie odpowiedniego typu plotowania
         plot_type_var = self.plot_type_var.get()
-
-        # Wywołanie już istniejącej funkcji plotowania
         plots = Plots()
         plots.plot(self.parsed_data, selected_columns, plot_type_var)
 
