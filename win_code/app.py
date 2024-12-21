@@ -140,8 +140,12 @@ class App:
 
         self.setup_plot_options() #inicjowanie ramki na typ skali
 
-        ctk.CTkButton(self.right_frame, text="Plot Data", command=self.plot_data).pack(pady=10)
 
+        # Column Listbox for plotting
+        self.plot_columns_listbox = tk.Listbox(self.right_frame, selectmode="multiple", height=10)
+        self.plot_columns_listbox.pack(fill="both", expand=True, padx=10, pady=10)
+
+        ctk.CTkButton(self.right_frame, text="Plot Selected Columns", command=self.plot_selected_columns).pack(pady=10)
 
         # Przycisk Exit teraz umieszczony na dole i z lekko czerwonym kolorem
         exit_button = ctk.CTkButton(self.right_frame, text="Exit", command=self.terminate_app, fg_color="#f73e3e")
@@ -176,7 +180,10 @@ class App:
             self.column_checkboxes[col] = var
 
     def on_pattern_selected(self, event=None):
+        selected_pattern = self.pattern_combo.get()
+        self.file_pattern = selected_pattern
         self.update_columns(event)
+        self.update_plot_columns_list()
 
     def update_progress_callback(self, processed_count, total_files):
         try:
@@ -224,6 +231,7 @@ class App:
             )
             self.parsed_data = parser.parse_data_no_merging(self.file_pattern,
                                                             progress_callback=self.update_progress_callback)
+            self.update_plot_columns_list()
 
             elapsed_time = parser.end_time - parser.start_time
             row_count = len(self.parsed_data)
@@ -325,27 +333,31 @@ class App:
         plots = Plots()
         plots.plot(self.parsed_data, selected_columns, plot_type_var)
 
-    def plot_data(self):
-        if self.parsed_data is None or self.parsed_data.empty:
-            messagebox.showerror("Error", "No data to plot. Please run the parser first.")
+    def update_plot_columns_list(self):
+        # Czyści wcześniejsze elementy listy kolumn do plotowania
+        self.plot_columns_listbox.delete(0, tk.END)
+
+        if self.parsed_data is not None and not self.parsed_data.empty:
+            # Dodaj kolumny danych od indeksu 3 do listboxa (zakładając, że kolumny danych zaczynają się od indeksu 3)
+            for col in self.parsed_data.columns[3:]:
+                self.plot_columns_listbox.insert(tk.END, col)
+
+    def plot_selected_columns(self):
+        selected_indices = self.plot_columns_listbox.curselection()
+        selected_columns = [self.plot_columns_listbox.get(i) for i in selected_indices]
+
+        if not selected_columns:
+            messagebox.showerror("Error", "No columns selected for plotting.")
             return
 
-        plot_type_var = self.plot_type_var.get()  # Pobieranie wybranej opcji wykresu
-        print(f"scale selected: {plot_type_var}")
-        plot_window = tk.Toplevel(self.root)
-        plot_window.title("Select Columns to Plot")
-        plot_window.geometry("200x400")
+        # Przekazanie odpowiedniego typu plotowania
+        plot_type_var = self.plot_type_var.get()
 
-        tk.Label(plot_window, text="Select Columns for Plotting:").pack(pady=10)
+        # Wywołanie już istniejącej funkcji plotowania
+        plots = Plots()
+        plots.plot(self.parsed_data, selected_columns, plot_type_var)
 
-        column_listbox = tk.Listbox(plot_window, selectmode="multiple", height=15, width=50)
-        column_listbox.pack(padx=10, pady=10)
 
-        for col in self.parsed_data.columns[3:]:
-            column_listbox.insert(tk.END, col)
-
-        tk.Button(plot_window, text="Plot Selected",
-                  command=lambda: self.confirm_and_plot(plot_window, column_listbox, plot_type_var)).pack(pady=5)
 
     def plot_loop(self):
         def plot_and_show_options():
