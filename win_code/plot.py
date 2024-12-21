@@ -15,7 +15,7 @@ class Plots:
             if column in df.columns:
                 plt.figure(figsize=(12, 6))
 
-                if plot_type_var == "log":
+                if plot_type_var == "logarithmic":
                     plt.plot(df[df.columns[0]], df[column], label=column)
                     plt.yscale("log")
                     plt.title(f'Logarithmic scale: {column}')
