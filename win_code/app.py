@@ -20,7 +20,9 @@ class App:
         self.parsed_data = None
         self.file_pattern = "0-Power Board"
         self.additional_columns = []
-
+        self.last_selected_pattern = "0-Power Board"
+        self.parse_column_checkboxes = {}
+        self.plot_column_checkboxes = {}
 
         # Layout konfiguracji siatki
         self.root.grid_rowconfigure(0, weight=1)
@@ -78,13 +80,15 @@ class App:
 
 
         ctk.CTkLabel(self.center_frame, text="File Pattern").grid(row=0, column=0, padx=10, pady=5, sticky="e")
-        self.pattern_combo = ctk.CTkComboBox(self.center_frame, values=list(self.pattern_columns.keys()), command=self.on_pattern_selected)
+        self.pattern_combo = ctk.CTkComboBox(self.center_frame, values=list(self.pattern_columns.keys()),
+                                             command=self.on_pattern_selected)
         self.pattern_combo.grid(row=0, column=1, padx=10, pady=5, sticky="w")
         self.pattern_combo.set("0-Power Board")
 
         # Suwak dla zadań równoległych
         self.workers_slider = ctk.CTkSlider(self.left_frame, from_=2, to=16,
                                             number_of_steps=14,command=self.update_worker_label)
+        self.workers_slider.set(2)
         self.workers_slider.pack(pady=10)
         self.workers_slider.configure(state="disabled")  # Początkowo dezaktywowany
         self.worker_label = ctk.CTkLabel(self.left_frame, text="Workers: 2")
@@ -146,7 +150,8 @@ class App:
         self.plot_column_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
         self.plot_column_canvas = ctk.CTkCanvas(self.plot_column_frame, width=200, height=200)
-        self.plot_column_scrollbar = ctk.CTkScrollbar(self.plot_column_frame, orientation="vertical", command=self.plot_column_canvas.yview)
+        self.plot_column_scrollbar = ctk.CTkScrollbar(self.plot_column_frame, orientation="vertical",
+                                                      command=self.plot_column_canvas.yview)
         self.plot_column_scrollable_frame = ctk.CTkFrame(self.plot_column_canvas)
 
         self.plot_column_scrollable_frame.bind(
@@ -166,7 +171,7 @@ class App:
         exit_button.pack(side="bottom", pady=10)
 
         # Aktualizacja kolumn
-        self.update_columns()
+        self.update_parse_columns()
 
         # Pasek postępu
         self.progress_var = tk.DoubleVar()
@@ -174,29 +179,39 @@ class App:
         self.progress_bar.grid(row=4, column=0, columnspan=3, pady=5)
         self.progress_bar.set(0)
 
-
     def update_worker_label(self, value):
         self.worker_label.configure(text=f"Tasks: {int(value)}")
 
-    def update_columns(self, event=None):
-        # Wyczyść istniejące elementy w scrollable_frame
-        for widget in self.scrollable_frame.winfo_children():
-            widget.destroy()
-
+    def update_parse_columns(self, event=None):
         selected_pattern = self.pattern_combo.get()
         columns = self.pattern_columns.get(selected_pattern, [])
-        self.column_checkboxes = {}
-
+        for widget in self.scrollable_frame.winfo_children():
+            widget.destroy()
+        self.parse_column_checkboxes = {}
         for col in columns:
             var = tk.BooleanVar(value=False)
             chk = ctk.CTkCheckBox(self.scrollable_frame, text=col, variable=var, width=50)
             chk.pack(fill="x", pady=1)
-            self.column_checkboxes[col] = var
+            self.parse_column_checkboxes[col] = var
+
+        # Pobierz kolumny dla wybranego wzorca
+        columns = self.pattern_columns.get(selected_pattern, [])
+
+        # Tworzenie checkboxów tylko jeśli nie istnieją (przy zmianie wzorca lub pierwszym uruchomieniu)
+        if not self.parse_column_checkboxes:
+            for col in columns:
+                var = tk.BooleanVar(value=False)
+                chk = ctk.CTkCheckBox(self.scrollable_frame, text=col, variable=var, width=50)
+                chk.pack(fill="x", pady=1)
+                self.parse_column_checkboxes[col] = var
+
+        # Aktualizacja ostatnio wybranego wzorca
+        self.last_selected_pattern = selected_pattern
 
     def on_pattern_selected(self, event=None):
         selected_pattern = self.pattern_combo.get()
         self.file_pattern = selected_pattern
-        self.update_columns(event)
+        self.update_parse_columns(event)
         self.update_plot_columns_list()
 
     def update_progress_callback(self, processed_count, total_files):
@@ -223,7 +238,7 @@ class App:
             messagebox.showerror("Error", "Please select a base folder")
             return
 
-        self.additional_columns = [col for col, var in self.column_checkboxes.items() if var.get()]
+        self.additional_columns = [col for col, var in self.parse_column_checkboxes.items() if var.get()]
 
         mode = self.mode_var.get()
         if mode == "multi":
@@ -245,7 +260,6 @@ class App:
             )
             self.parsed_data = parser.parse_data_no_merging(self.file_pattern,
                                                             progress_callback=self.update_progress_callback)
-            self.update_plot_columns_list()
 
             elapsed_time = parser.end_time - parser.start_time
             row_count = len(self.parsed_data)
@@ -264,6 +278,8 @@ class App:
             self.status_label.configure(text="Parsing failed.", text_color="red")
             messagebox.showerror("Error", f"An error occurred: {e}")
 
+        self.update_plot_columns_list()
+
     def toggle_workers(self):
         mode = self.mode_var.get()
         print(f"Toggle workers called, mode: {mode}")  # Debug print
@@ -273,10 +289,6 @@ class App:
         else:
             self.workers_slider.configure(state="disabled")
             print("Slider disabled")  # Debug print
-
-    def update_worker_label(self, value):
-        if self.mode_var.get() == "multi":
-            self.worker_label.configure(text=f"Workers: {int(value)}")
 
     def download_parsed_file(self):
         if self.parsed_data is not None and not self.parsed_data.empty:
@@ -357,19 +369,18 @@ class App:
         plots.plot(self.parsed_data, selected_columns, plot_type_var)
 
     def update_plot_columns_list(self):
-        # Czyści wcześniejsze elementy listy kolumn do plotowania
         for widget in self.plot_column_scrollable_frame.winfo_children():
             widget.destroy()
-
+        self.plot_column_checkboxes = {}
         if self.parsed_data is not None and not self.parsed_data.empty:
             for col in self.parsed_data.columns[3:]:
                 var = tk.BooleanVar(value=False)
                 chk = ctk.CTkCheckBox(self.plot_column_scrollable_frame, text=col, variable=var)
                 chk.pack(fill="x", pady=1)
-                self.column_checkboxes[col] = var
+                self.plot_column_checkboxes[col] = var
 
     def plot_selected_columns(self):
-        selected_columns = [col for col, var in self.column_checkboxes.items() if var.get()]
+        selected_columns = [col for col, var in self.plot_column_checkboxes.items() if var.get()]
 
         if not selected_columns:
             messagebox.showerror("Error", "No columns selected for plotting.")
@@ -379,38 +390,6 @@ class App:
         plot_type_var = self.plot_type_var.get()
         plots = Plots()
         plots.plot(self.parsed_data, selected_columns, plot_type_var)
-
-
-
-    def plot_loop(self):
-        def plot_and_show_options():
-            selected_indices = self.column_listbox.curselection()
-            selected_columns = [self.column_listbox.get(i) for i in selected_indices]
-
-            if not selected_columns:
-                messagebox.showerror("Error", "No columns selected for plotting.")
-                return
-
-            plots = Plots()
-            plots.plot(self.parsed_data, selected_columns,plot_type_var=self.plot_type_var)
-
-            options_window = tk.Toplevel(self.root)
-            options_window.title("Plot Options")
-            options_window.geometry("300x150")
-
-            tk.Label(options_window, text="Choose an action:").pack(pady=10)
-
-            tk.Button(options_window, text="Download Plot", command=lambda: self.download_plot(options_window)).pack(
-                pady=5)
-
-            tk.Button(options_window, text="Move to Another", command=lambda: options_window.destroy()).pack(pady=5)
-
-            tk.Button(options_window, text="Terminate", command=lambda: self.terminate_app(options_window)).pack(pady=5)
-
-        while True:
-            plot_and_show_options()
-            if hasattr(self, 'terminate') and self.terminate:
-                break
 
     def plot_type_changed(self):
         current_plot_type = self.plot_type_var.get()
