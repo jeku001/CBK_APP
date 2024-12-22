@@ -1,8 +1,7 @@
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import os
 import time
 import pandas as pd
-from concurrent.futures import ProcessPoolExecutor
-
 
 class Parser:
     def __init__(self, base_folder, additional_columns=None, start_year=None, end_year=None, workers=1):
@@ -11,8 +10,11 @@ class Parser:
         self.start_year = start_year
         self.end_year = end_year
         self.workers = workers
+        self.start_time = -1
+        self.end_time = -1
 
-    def parse_single_file(self, file_path, required_columns):
+    @staticmethod
+    def parse_single_file(file_path, required_columns):
         try:
             df = pd.read_csv(file_path, encoding="iso-8859-1")
             if not all(col in df.columns for col in required_columns):
@@ -27,10 +29,10 @@ class Parser:
     def parse_data_no_merging(self, file_pattern="0-Power Board", progress_callback=None):
         self.start_time = time.time()  # start time całego procesu
         required_columns = [
-                               "'Date (YYYY-MM-DD HH:MM:SS)",
-                               "'Date Millisecond Offset",
-                               "'Date (J2000 mseconds)"
-                           ] + self.additional_columns
+            "'Date (YYYY-MM-DD HH:MM:SS)",
+            "'Date Millisecond Offset",
+            "'Date (J2000 mseconds)"
+        ] + self.additional_columns
 
         if self.start_year is not None:
             self.start_year = int(self.start_year)
@@ -62,29 +64,34 @@ class Parser:
         data_list = []
         total_files = len(files_to_process)
 
+        # Use ThreadPoolExecutor if files are less than 1000 or ProcessPoolExecutor if more, assuming multiprocessing is enabled
         if self.workers > 1:
-            print("Starting multi-process parsing...")
+            if total_files < 1000:
+                executor_class = ThreadPoolExecutor
+                print("Using ThreadPoolExecutor for parsing...")
+            else:
+                executor_class = ProcessPoolExecutor
+                print("Using ProcessPoolExecutor for parsing...")
+
             processed_count = 0
-            with ProcessPoolExecutor(max_workers=self.workers) as executor:
-                results = executor.map(self.parse_single_file, files_to_process,
-                                       [required_columns] * total_files)
+            with executor_class(max_workers=self.workers) as executor:
+                results = executor.map(self.parse_single_file, files_to_process, [required_columns] * total_files)
                 for res_df in results:
                     if not res_df.empty:
                         data_list.append(res_df)
                     processed_count += 1
-                    # Wywołanie callbacka po przetworzeniu pliku
+                    # Call the progress callback after each file is processed
                     if progress_callback:
                         progress_callback(processed_count, total_files)
                     print(f"Processed {processed_count}/{total_files} files...")
         else:
-            print("Starting single-process parsing...")
+            print("Using single-threaded parsing...")
             processed_count = 0
             for fpath in files_to_process:
                 res_df = self.parse_single_file(fpath, required_columns)
                 if not res_df.empty:
                     data_list.append(res_df)
                 processed_count += 1
-                # Wywołanie callbacka po przetworzeniu pliku
                 if progress_callback:
                     progress_callback(processed_count, total_files)
                 print(f"Processed {processed_count}/{total_files} files...")
