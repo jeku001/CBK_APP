@@ -1,13 +1,12 @@
-import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Cursor
 
 
 class Plots:
     def __init__(self):
         pass
 
-    def plot(self, df, selected_columns=None, plot_type_var="linear"):
+    @staticmethod
+    def plot(df, selected_columns=None, plot_type_var="linear"):
         all_columns = df.columns[3:]
         columns_to_plot = selected_columns if selected_columns else all_columns
 
@@ -28,6 +27,6 @@ class Plots:
                 plt.legend(loc="upper right")
                 plt.grid(True)
 
-                cursor = Cursor(plt.gca(), useblit=True, color='red', linewidth=1)
-                #plt.savefig("wykres.pdf", format="pdf")
+                # cursor = Cursor(plt.gca(), useblit=True, color='red', linewidth=1)
+                # plt.savefig("wykres.pdf", format="pdf")
                 plt.show()

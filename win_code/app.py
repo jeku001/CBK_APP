@@ -5,8 +5,9 @@ from parser import Parser
 from plot import Plots
 import os
 import matplotlib
+
 matplotlib.use("TkAgg")
-import matplotlib.pyplot as plt
+
 
 # Tkinter Application
 class App:
@@ -23,12 +24,13 @@ class App:
         self.last_selected_pattern = "0-Power Board"
         self.parse_column_checkboxes = {}
         self.plot_column_checkboxes = {}
+        self.plot_type_var = tk.StringVar(value="linear")
+        self.mode_var = tk.StringVar(value="single")
 
         # Layout konfiguracji siatki
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_columnconfigure(1, weight=1)
 
-        # Mapowanie wzorców plików na listy kolumn
         self.pattern_columns = {
             "0-Power Board": self.get_columns_0(),
             "1-BCDR0": self.get_columns_1(),
@@ -78,7 +80,6 @@ class App:
         self.end_year_entry = ctk.CTkEntry(self.left_frame, width=100)
         self.end_year_entry.pack(pady=5)
 
-
         ctk.CTkLabel(self.center_frame, text="File Pattern").grid(row=0, column=0, padx=10, pady=5, sticky="e")
         self.pattern_combo = ctk.CTkComboBox(self.center_frame, values=list(self.pattern_columns.keys()),
                                              command=self.on_pattern_selected)
@@ -87,11 +88,11 @@ class App:
 
         # Suwak dla zadań równoległych
         self.workers_slider = ctk.CTkSlider(self.left_frame, from_=2, to=16,
-                                            number_of_steps=14,command=self.update_worker_label)
+                                            number_of_steps=14, command=self.update_worker_label)
         self.workers_slider.set(2)
         self.workers_slider.pack(pady=10)
         self.workers_slider.configure(state="disabled")  # Początkowo dezaktywowany
-        self.worker_label = ctk.CTkLabel(self.left_frame, text="Workers: 2")
+        self.worker_label = ctk.CTkLabel(self.left_frame, text="Parallel tasks: 2")
         self.worker_label.pack(pady=10)
 
         self.column_frame = ctk.CTkFrame(self.center_frame)
@@ -100,14 +101,13 @@ class App:
         # Radio Buttons dla trybów Single i Multi
         self.mode_frame = ctk.CTkFrame(self.left_frame)
         self.mode_frame.pack(pady=10)
-        self.mode_var = tk.StringVar(value="single")  # Zmienna przechowująca wybrany tryb
 
         self.single_mode_button = ctk.CTkRadioButton(self.mode_frame, text="Single Mode",
                                                      variable=self.mode_var, value="single",
                                                      command=self.toggle_workers)
         self.single_mode_button.pack(side="left")
 
-        self.multi_mode_button = ctk.CTkRadioButton(self.mode_frame, text="Multi Mode",
+        self.multi_mode_button = ctk.CTkRadioButton(self.mode_frame, text="Parallel Mode",
                                                     variable=self.mode_var, value="multi",
                                                     command=self.toggle_workers)
         self.multi_mode_button.pack(side="left")
@@ -142,8 +142,7 @@ class App:
                                              command=self.download_parsed_file, state="disabled")
         self.download_button.pack(pady=10)
 
-        self.setup_plot_options() #inicjowanie ramki na typ skali
-
+        self.setup_plot_options()  # inicjowanie ramki na typ skali
 
         # Stworzenie scrollable frame dla kolumn do plotowania
         self.plot_column_frame = ctk.CTkFrame(self.right_frame)
@@ -194,10 +193,8 @@ class App:
             chk.pack(fill="x", pady=1)
             self.parse_column_checkboxes[col] = var
 
-        # Pobierz kolumny dla wybranego wzorca
         columns = self.pattern_columns.get(selected_pattern, [])
 
-        # Tworzenie checkboxów tylko jeśli nie istnieją (przy zmianie wzorca lub pierwszym uruchomieniu)
         if not self.parse_column_checkboxes:
             for col in columns:
                 var = tk.BooleanVar(value=False)
@@ -205,7 +202,6 @@ class App:
                 chk.pack(fill="x", pady=1)
                 self.parse_column_checkboxes[col] = var
 
-        # Aktualizacja ostatnio wybranego wzorca
         self.last_selected_pattern = selected_pattern
 
     def on_pattern_selected(self, event=None):
@@ -300,12 +296,12 @@ class App:
             if output_file:
                 try:
 
-                    #self.status_label.config(text="Saving...", fg="orange")
+                    # self.status_label.config(text="Saving...", fg="orange")
                     self.root.update_idletasks()
 
                     self.parsed_data.to_csv(output_file, index=False)
 
-                    #self.status_label.config(text=f"File saved successfully: {output_file}", fg="green")
+                    # self.status_label.config(text=f"File saved successfully: {output_file}", fg="green")
                     messagebox.showinfo("Success", f"File saved to: {output_file}")
                 except Exception as e:
                     self.status_label.configure(text="save failed.", text_color="red")
@@ -315,45 +311,114 @@ class App:
         else:
             self.status_label.configure(text="No data to save.", text_color="red")
             messagebox.showerror("Error", "No data available to save.")
+
     @staticmethod
     def get_columns_0():
-        return ["'SStates Loadshed","'SStates Loadshed Latch","'SStates Test Mode","'SStates Magnetometer","'SStates PXFSS","'SStates NXFSS","'SStates PYFSS","'SStates NYFSS","'SStates PZFSS","'SStates NZFSS","'SStates XWheel","'SStates YWheel","'SStates ZWheel","'SStates RateGyro","'SStates MTX","'SStates MTY","'SStates MTZ","'SStates GPS Supply","'SStates 5V Supply","'SStates Spare","'SStates Instrument","'SStates GPS","'SStates BCDR0State","'SStates BCDR1State","'+X Panel Current(mA)","'+Y Panel Current(mA)","'+Z Panel Current(mA)","'-X Panel Current(mA)","'-Y Panel Current(mA)","'-Z Panel Current(mA)","'+X Panel Temperature(°C)","'+Y Panel Temperature(°C)","'+Z Panel Temperature(°C)","'-X Panel Temperature(°C)","'-Y Panel Temperature(°C)","'-Z Panel Temperature(°C)","'Bus Voltage(V)","'Main Switch Current(A)","'5V Rail Voltage(V)","'3V Rail Voltage(V)","'3V Rail Current(mA)","'ADC0 Temperture(°C)","'ADC1 Temperture(°C)","'ADC2 Temperture(°C)","'BCDR0 Battery Voltage(V)","'BCDR1 Battery Voltage(V)","'HKC Current(mA)","'ADCC Current(mA)","'Magnetometer Voltage(V)","'Rate Sensor Voltage(V)","'Rate Sensor Current(mA)","'Sun Sensor Voltage(V)","'Sun Sensor Current(mA)","'Mag. Torquer X Current(mA)","'Mag. Torquer Y Current(mA)","'Mag. Torquer Z Current(mA)","'Wheel Sum Current(mA)","'Wheel X Voltage(V)","'Wheel Y Voltage(V)","'Wheel Z Voltage(V)","'ST Switch Voltage(V)","'ST Switch Current(mA)","'ST Voltage(V)","'ST Current(mA)","'Instrument Voltage(V)","'Instrument Current(mA)","'UHF Rx Current(mA)","'UHF Rx Temperature(°C)","'UHF Rx SSI(V)","'S-Band Tx Voltage(V)","'S-Band Tx Current(A)"]
+        return ["'SStates Loadshed", "'SStates Loadshed Latch", "'SStates Test Mode", "'SStates Magnetometer",
+                "'SStates PXFSS", "'SStates NXFSS", "'SStates PYFSS", "'SStates NYFSS", "'SStates PZFSS",
+                "'SStates NZFSS", "'SStates XWheel", "'SStates YWheel", "'SStates ZWheel", "'SStates RateGyro",
+                "'SStates MTX", "'SStates MTY", "'SStates MTZ", "'SStates GPS Supply", "'SStates 5V Supply",
+                "'SStates Spare", "'SStates Instrument", "'SStates GPS", "'SStates BCDR0State", "'SStates BCDR1State",
+                "'+X Panel Current(mA)", "'+Y Panel Current(mA)", "'+Z Panel Current(mA)", "'-X Panel Current(mA)",
+                "'-Y Panel Current(mA)", "'-Z Panel Current(mA)", "'+X Panel Temperature(°C)",
+                "'+Y Panel Temperature(°C)", "'+Z Panel Temperature(°C)", "'-X Panel Temperature(°C)",
+                "'-Y Panel Temperature(°C)", "'-Z Panel Temperature(°C)", "'Bus Voltage(V)", "'Main Switch Current(A)",
+                "'5V Rail Voltage(V)", "'3V Rail Voltage(V)", "'3V Rail Current(mA)", "'ADC0 Temperture(°C)",
+                "'ADC1 Temperture(°C)", "'ADC2 Temperture(°C)", "'BCDR0 Battery Voltage(V)",
+                "'BCDR1 Battery Voltage(V)", "'HKC Current(mA)", "'ADCC Current(mA)", "'Magnetometer Voltage(V)",
+                "'Rate Sensor Voltage(V)", "'Rate Sensor Current(mA)", "'Sun Sensor Voltage(V)",
+                "'Sun Sensor Current(mA)", "'Mag. Torquer X Current(mA)", "'Mag. Torquer Y Current(mA)",
+                "'Mag. Torquer Z Current(mA)", "'Wheel Sum Current(mA)", "'Wheel X Voltage(V)", "'Wheel Y Voltage(V)",
+                "'Wheel Z Voltage(V)", "'ST Switch Voltage(V)", "'ST Switch Current(mA)", "'ST Voltage(V)",
+                "'ST Current(mA)", "'Instrument Voltage(V)", "'Instrument Current(mA)", "'UHF Rx Current(mA)",
+                "'UHF Rx Temperature(°C)", "'UHF Rx SSI(V)", "'S-Band Tx Voltage(V)", "'S-Band Tx Current(A)"]
 
     @staticmethod
     def get_columns_1():
-        return ["'Reset Reason","'Reset Count","'SEU Count","'Ping Pointer","'Control Pointer","'Battery Temperature(°C)","'Heater On","'Mode","'Bus Voltage(V)","'Battery Voltage(V)","'Battery Current(mA)","'State of Charge(mA*h)","'Bus Target(V)","'Discharge Command"]
+        return ["'Reset Reason", "'Reset Count", "'SEU Count", "'Ping Pointer", "'Control Pointer",
+                "'Battery Temperature(°C)", "'Heater On", "'Mode", "'Bus Voltage(V)", "'Battery Voltage(V)",
+                "'Battery Current(mA)", "'State of Charge(mA*h)", "'Bus Target(V)", "'Discharge Command"]
 
     @staticmethod
     def get_columns_2():
-        return ["'Reset Reason","'Reset Count","'SEU Count","'Ping Pointer","'Control Pointer","'Battery Temperature(°C)","'Heater On","'Mode","'Bus Voltage(V)","'Battery Voltage(V)","'Battery Current(mA)","'State of Charge(mA*h)","'Bus Target(V)","'Discharge Command"]
+        return ["'Reset Reason", "'Reset Count", "'SEU Count", "'Ping Pointer", "'Control Pointer",
+                "'Battery Temperature(°C)", "'Heater On", "'Mode", "'Bus Voltage(V)", "'Battery Voltage(V)",
+                "'Battery Current(mA)", "'State of Charge(mA*h)", "'Bus Target(V)", "'Discharge Command"]
 
     @staticmethod
     def get_columns_3():
-        return ["'Tx ADC Temperature(°C)","'PA Forward Power(V)","'PA Reverse Power(V)","'PA Control Signal(V)","'3V Analog Supply Current PA(mA)","'5V Supply(V)","'Synthesizer Temperature(°C)","'3V Analog Supply Voltage PA(V)","'Power Amplifier Temperature(°C)","'5V Supply Current(mA)","'3V Analog Supply Current CB(mA)","'3V VCO Supply Current(mA)","'3V Digital Supply Current(mA)","'Synthesizer Lock A(V)","'Synthesizer Lock B(V)","'3V Analog Supply Voltage CB(V)","'3V Digital Supply Voltage CB(V)"]
+        return ["'Tx ADC Temperature(°C)", "'PA Forward Power(V)", "'PA Reverse Power(V)", "'PA Control Signal(V)",
+                "'3V Analog Supply Current PA(mA)", "'5V Supply(V)", "'Synthesizer Temperature(°C)",
+                "'3V Analog Supply Voltage PA(V)", "'Power Amplifier Temperature(°C)", "'5V Supply Current(mA)",
+                "'3V Analog Supply Current CB(mA)", "'3V VCO Supply Current(mA)", "'3V Digital Supply Current(mA)",
+                "'Synthesizer Lock A(V)", "'Synthesizer Lock B(V)", "'3V Analog Supply Voltage CB(V)",
+                "'3V Digital Supply Voltage CB(V)"]
 
     @staticmethod
     def get_columns_4():
-        return ["'HKC Temperature(°C)","'Reset Count","'Last Reset Reason"]
+        return ["'HKC Temperature(°C)", "'Reset Count", "'Last Reset Reason"]
 
     @staticmethod
     def get_columns_5():
-        return ["'TMS470 Video ADC Temperature(°C)","'TMS470 Heater Voltage(V)","'TMS470 +6V(V)","'MAX1231 Temperature(°C)","'MAX1231 H1H (+6V)(V)","'MAX1231 HRH (+1.5V)(V)","'MAX1231 vh+fdh (+8V)(V)","'MAX1231 RDL (+11V)(V)","'MAX1231 RR (+1.5V)(V)","'MAX1231 +15V(V)","'MAX1231 +Sub (+10V)(V)","'MAX1231 +18V(V)","'MAX1231 +5VA(V)","'MAX1231 H1L (-4V)(V)","'MAX1231 ESD (+8V)(V)","'MAX1231 -FDL (-9V)(V)","'MAX1231 HRL (-3.5V)(V)","'MAX1231 OGL (-2.5V)(V)","'MAX1231 -18V(V)","'MAX1231 -5VA(V)","'GPIO GIO Dir A","'GPIO GIO DIn A","'GPIO GIO DOut A","'GPIO HET Dir A","'GPIO HET DIn A","'GPIO HET DOut A","'FPGA Status[0]","'FPGA Status[1]","'IOBC Exception[0]","'IOBC Exception[1]","'IOBC Exception[2]","'IOBC Exception[3]"]
+        return ["'TMS470 Video ADC Temperature(°C)", "'TMS470 Heater Voltage(V)", "'TMS470 +6V(V)",
+                "'MAX1231 Temperature(°C)", "'MAX1231 H1H (+6V)(V)", "'MAX1231 HRH (+1.5V)(V)",
+                "'MAX1231 vh+fdh (+8V)(V)", "'MAX1231 RDL (+11V)(V)", "'MAX1231 RR (+1.5V)(V)", "'MAX1231 +15V(V)",
+                "'MAX1231 +Sub (+10V)(V)", "'MAX1231 +18V(V)", "'MAX1231 +5VA(V)", "'MAX1231 H1L (-4V)(V)",
+                "'MAX1231 ESD (+8V)(V)", "'MAX1231 -FDL (-9V)(V)", "'MAX1231 HRL (-3.5V)(V)", "'MAX1231 OGL (-2.5V)(V)",
+                "'MAX1231 -18V(V)", "'MAX1231 -5VA(V)", "'GPIO GIO Dir A", "'GPIO GIO DIn A", "'GPIO GIO DOut A",
+                "'GPIO HET Dir A", "'GPIO HET DIn A", "'GPIO HET DOut A", "'FPGA Status[0]", "'FPGA Status[1]",
+                "'IOBC Exception[0]", "'IOBC Exception[1]", "'IOBC Exception[2]", "'IOBC Exception[3]"]
 
     @staticmethod
     def get_columns_6():
-        return ["'EulerAngleErrors Data[0]","'EulerAngleErrors Data[1]","'EulerAngleErrors Data[2]","'EulerAngleErrors Length","'Mode In","'Mode In","'Mode Out","'Mode Out","'StateVector Data[0]","'StateVector Data[1]","'StateVector Data[2]","'StateVector Data[3]","'StateVector Data[4]","'StateVector Data[5]","'StateVector Data[6]","'StateVector Length","'Chosen FSS","'Current FFS Data[0]","'Current FFS Data[1]","'Current FFS Data[2]","'Current FFS Data[3]","'Current FFS Data[4]","'Current FFS Data[5]","'Current FFS Data[6]","'Cycle Counter","'Gamma","'Useable FSS Data[0]","'Useable FSS Data[1]","'Useable FSS Data[2]","'Useable FSS Data[3]","'Useable FSS Data[4]","'Useable FSS Data[5]","'Useable_FSS Length","'Active Sensors Data[0]","'Active Sensors Data[1]","'Active Sensors Data[2]","'Active Sensors Data[3]","'Active Sensors Length","'Hold Transition","'StatePkp1p Data[0]","'StatePkp1p Data[1]","'StatePkp1p Data[2]","'StatePkp1p Data[3]","'StatePkp1p Data[4]","'StatePkp1p Data[5]","'StatePkp1p Data[6]","'StatePkp1p Length"]
+        return ["'EulerAngleErrors Data[0]", "'EulerAngleErrors Data[1]", "'EulerAngleErrors Data[2]",
+                "'EulerAngleErrors Length", "'Mode In", "'Mode In", "'Mode Out", "'Mode Out", "'StateVector Data[0]",
+                "'StateVector Data[1]", "'StateVector Data[2]", "'StateVector Data[3]", "'StateVector Data[4]",
+                "'StateVector Data[5]", "'StateVector Data[6]", "'StateVector Length", "'Chosen FSS",
+                "'Current FFS Data[0]", "'Current FFS Data[1]", "'Current FFS Data[2]", "'Current FFS Data[3]",
+                "'Current FFS Data[4]", "'Current FFS Data[5]", "'Current FFS Data[6]", "'Cycle Counter", "'Gamma",
+                "'Useable FSS Data[0]", "'Useable FSS Data[1]", "'Useable FSS Data[2]", "'Useable FSS Data[3]",
+                "'Useable FSS Data[4]", "'Useable FSS Data[5]", "'Useable_FSS Length", "'Active Sensors Data[0]",
+                "'Active Sensors Data[1]", "'Active Sensors Data[2]", "'Active Sensors Data[3]",
+                "'Active Sensors Length", "'Hold Transition", "'StatePkp1p Data[0]", "'StatePkp1p Data[1]",
+                "'StatePkp1p Data[2]", "'StatePkp1p Data[3]", "'StatePkp1p Data[4]", "'StatePkp1p Data[5]",
+                "'StatePkp1p Data[6]", "'StatePkp1p Length"]
 
     @staticmethod
     def get_columns_7():
-        return ["'ACS Cycle Count","'ACS Cycle Timeout Count","'ACS Cycle OASYS Count","'ACS State","'ACS SubState[0]","'ACS SubState[1]","'ACS SubState[2]","'ACS SubState[3]","'ACS SubState[4]","'ACS SubState[5]","'ACS SubState[6]","'ACS SubState[7]","'ACS SubState[8]","'ACS SubState[9]","'ACS Error Code","'ACS Device Config Mask","'SS CoarseVoltage 0(V)","'SS Exposure Time 0(ms)","'SS CoarseVoltage 1(V)","'SS Exposure Time 1(ms)","'SS CoarseVoltage 2(V)","'SS Exposure Time 2(ms)","'SS CoarseVoltage 3(V)","'SS Exposure Time 3(ms)","'SS CoarseVoltage 4(V)","'SS Exposure Time 4(ms)","'SS CoarseVoltage 5(V)","'SS Exposure Time 5(ms)","'Wheel Speed[0](rad/s)","'Wheel Speed[1](rad/s)","'Wheel Speed[2](rad/s)","'Magnetometer X","'Magnetometer Y","'Magnetometer Z","'Magnetometer Temperature(°C)","'Rate Sensor X","'Rate Sensor Y","'Rate Sensor Z","'Rate Sensor Temperature(°C)"]
+        return ["'ACS Cycle Count", "'ACS Cycle Timeout Count", "'ACS Cycle OASYS Count", "'ACS State",
+                "'ACS SubState[0]", "'ACS SubState[1]", "'ACS SubState[2]", "'ACS SubState[3]", "'ACS SubState[4]",
+                "'ACS SubState[5]", "'ACS SubState[6]", "'ACS SubState[7]", "'ACS SubState[8]", "'ACS SubState[9]",
+                "'ACS Error Code", "'ACS Device Config Mask", "'SS CoarseVoltage 0(V)", "'SS Exposure Time 0(ms)",
+                "'SS CoarseVoltage 1(V)", "'SS Exposure Time 1(ms)", "'SS CoarseVoltage 2(V)",
+                "'SS Exposure Time 2(ms)", "'SS CoarseVoltage 3(V)", "'SS Exposure Time 3(ms)",
+                "'SS CoarseVoltage 4(V)", "'SS Exposure Time 4(ms)", "'SS CoarseVoltage 5(V)",
+                "'SS Exposure Time 5(ms)", "'Wheel Speed[0](rad/s)", "'Wheel Speed[1](rad/s)", "'Wheel Speed[2](rad/s)",
+                "'Magnetometer X", "'Magnetometer Y", "'Magnetometer Z", "'Magnetometer Temperature(°C)",
+                "'Rate Sensor X", "'Rate Sensor Y", "'Rate Sensor Z", "'Rate Sensor Temperature(°C)"]
 
     @staticmethod
     def get_columns_8():
-        return ["'Error Code","'Telemetry WheelSpeed Value[0]","'Telemetry WheelSpeed Value[1]","'Telemetry WheelSpeed Value[2]","'Telemetry WheelSpeed Length","'EKFMon Mag Iterations","'EKFMon Mag Residual Value[0]","'EKFMon Mag Residual Value[1]","'EKFMon Mag Residual Value[2]","'EKFMon Mag Residual Length","'EKFMon Mag Trace P","'EKFMon Fss Iterations","'EKFMon Fss Residual Value[0]","'EKFMon Fss Residual Value[1]","'EKFMon Fss Residual Value[2]","'EKFMon Fss Residual Value[3]","'EKFMon Fss Residual Value[4]","'EKFMon Fss Residual Value[5]","'EKFMon Fss Residual Length","'EKFMon Fss Trace P","'EKFMon RTS Iterations","'EKFMon RTS Residual Value[0]","'EKFMon RTS Residual Value[1]","'EKFMon RTS Residual Value[2]","'EKFMon RTS Residual Length"]
+        return ["'Error Code", "'Telemetry WheelSpeed Value[0]", "'Telemetry WheelSpeed Value[1]",
+                "'Telemetry WheelSpeed Value[2]", "'Telemetry WheelSpeed Length", "'EKFMon Mag Iterations",
+                "'EKFMon Mag Residual Value[0]", "'EKFMon Mag Residual Value[1]", "'EKFMon Mag Residual Value[2]",
+                "'EKFMon Mag Residual Length", "'EKFMon Mag Trace P", "'EKFMon Fss Iterations",
+                "'EKFMon Fss Residual Value[0]", "'EKFMon Fss Residual Value[1]", "'EKFMon Fss Residual Value[2]",
+                "'EKFMon Fss Residual Value[3]", "'EKFMon Fss Residual Value[4]", "'EKFMon Fss Residual Value[5]",
+                "'EKFMon Fss Residual Length", "'EKFMon Fss Trace P", "'EKFMon RTS Iterations",
+                "'EKFMon RTS Residual Value[0]", "'EKFMon RTS Residual Value[1]", "'EKFMon RTS Residual Value[2]",
+                "'EKFMon RTS Residual Length"]
 
     @staticmethod
     def get_columns_9():
-        return ["'Reset Count File","'Reset Reason File","'Comm Err Count File","'Scrub Index File","'SEU Count File","'Init Pointer File","'Ping Pointer File","'ADC Raw1 File","'ADC Raw2 File","'ADC Raw3 File","'ADC Raw4 File","'PWM Setting File","'PWM Period File","'PWM Controller Pointer File","'PWM Controller Cycle File","'PWM DCycle1 File","'PWM DCycle2 File","'PWM DCycle3 File","'PWM DCycle4 File","'Converted Temp1 File(°C)","'Converted Temp2 File(°C)","'Converted Temp3 File(°C)","'Converted Temp4 File(°C)","'Controller P Gain File","'Controller I Gain File","'Controller D Gain File","'Controller I Max File","'Controller Max DT File","'Controller SetPoint File","'Controller I State File"]
+        return ["'Reset Count File", "'Reset Reason File", "'Comm Err Count File", "'Scrub Index File",
+                "'SEU Count File", "'Init Pointer File", "'Ping Pointer File", "'ADC Raw1 File", "'ADC Raw2 File",
+                "'ADC Raw3 File", "'ADC Raw4 File", "'PWM Setting File", "'PWM Period File",
+                "'PWM Controller Pointer File", "'PWM Controller Cycle File", "'PWM DCycle1 File", "'PWM DCycle2 File",
+                "'PWM DCycle3 File", "'PWM DCycle4 File", "'Converted Temp1 File(°C)", "'Converted Temp2 File(°C)",
+                "'Converted Temp3 File(°C)", "'Converted Temp4 File(°C)", "'Controller P Gain File",
+                "'Controller I Gain File", "'Controller D Gain File", "'Controller I Max File",
+                "'Controller Max DT File", "'Controller SetPoint File", "'Controller I State File"]
 
     def confirm_and_plot(self, window, column_listbox, plot_type_var):
         selected_indices = column_listbox.curselection()
@@ -404,9 +469,6 @@ class App:
         plot_options_label = ctk.CTkLabel(self.plot_options_frame, text="Plot Type Options", font=("Arial", 12, "bold"))
         plot_options_label.pack(pady=(10, 5))
 
-        # Zmienna do przechowywania wybranej opcji wykresu
-        self.plot_type_var = tk.StringVar(value="linear")  # Domyślnie ustawiony na 'linear'
-
         # Przyciski radio dla wyboru typu wykresu
         linear_button = ctk.CTkRadioButton(self.plot_options_frame, text="Linear", variable=self.plot_type_var,
                                            value="linear", command=self.plot_type_changed)
@@ -420,17 +482,13 @@ class App:
         self.plot_options_frame.configure(fg_color="white")  # Set foreground color
         self.plot_options_frame.configure(bg_color="white")  # Set background color if supported
 
-    def download_plot(self, window):
-        plt.savefig("plot_output.pdf", format="pdf")
-        messagebox.showinfo("Success", "Plot saved as plot_output.pdf")
-        window.destroy()
-
     def terminate_app(self):
         self.root.destroy()
 
 
 if __name__ == "__main__":
     import multiprocessing
+
     multiprocessing.freeze_support()
 
     root = tk.Tk()

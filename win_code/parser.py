@@ -3,6 +3,7 @@ import os
 import time
 import pandas as pd
 
+
 class Parser:
     def __init__(self, base_folder, additional_columns=None, start_year=None, end_year=None, workers=1):
         self.base_folder = base_folder
@@ -64,14 +65,17 @@ class Parser:
         data_list = []
         total_files = len(files_to_process)
 
-        # Use ThreadPoolExecutor if files are less than 1000 or ProcessPoolExecutor if more, assuming multiprocessing is enabled
+        # Use ThreadPoolExecutor if files are less than 500 or ProcessPoolExecutor if more,
+        # assuming multiprocessing is enabled
         if self.workers > 1:
-            if total_files < 1000:
+            if total_files < 500:
                 executor_class = ThreadPoolExecutor
-                print("Using ThreadPoolExecutor for parsing...")
+                print("Less than 500 files to process, using ThreadPoolExecutor for parsing...")
+                print(f"{self.workers} parallel tasks ")
             else:
                 executor_class = ProcessPoolExecutor
-                print("Using ProcessPoolExecutor for parsing...")
+                print("More than 500 files to process, using ProcessPoolExecutor for parsing...")
+                print(f"{self.workers} parallel tasks ")
 
             processed_count = 0
             with executor_class(max_workers=self.workers) as executor:
@@ -83,7 +87,7 @@ class Parser:
                     # Call the progress callback after each file is processed
                     if progress_callback:
                         progress_callback(processed_count, total_files)
-                    print(f"Processed {processed_count}/{total_files} files...")
+                    # print(f"Processed {processed_count}/{total_files} files...")
         else:
             print("Using single-threaded parsing...")
             processed_count = 0
@@ -94,7 +98,7 @@ class Parser:
                 processed_count += 1
                 if progress_callback:
                     progress_callback(processed_count, total_files)
-                print(f"Processed {processed_count}/{total_files} files...")
+                # print(f"Processed {processed_count}/{total_files} files...")
 
         if data_list:
             long_df = pd.concat(data_list, ignore_index=True)
