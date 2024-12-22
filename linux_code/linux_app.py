@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
-from parser import Parser
-from plot import Plots
+from linux_parser import Parser
+from linux_plot import Plots
 import os
 import matplotlib.pyplot as plt
 
@@ -393,4 +393,4 @@ if __name__ == "__main__":
     app = App(root)
     root.mainloop()
 
-#pyinstaller --onefile --console --hidden-import matplotlib --hidden-import matplotlib.backends --hidden-import PIL.ImageTk --hidden-import PIL._tkinter_finder app.py
+#pyinstaller --onefile --console --hidden-import matplotlib --hidden-import matplotlib.backends --hidden-import PIL.ImageTk --hidden-import PIL._tkinter_finder win_app.py

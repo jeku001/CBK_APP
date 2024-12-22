@@ -1,8 +1,8 @@
 import tkinter as tk
 import customtkinter as ctk
 from tkinter import filedialog, messagebox
-from parser import Parser
-from plot import Plots
+from win_parser import Parser
+from win_plot import Plots
 import os
 import matplotlib
 
