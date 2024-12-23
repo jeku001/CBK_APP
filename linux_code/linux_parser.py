@@ -11,8 +11,10 @@ class Parser:
         self.start_year = start_year
         self.end_year = end_year
         self.workers = workers
-
-    def parse_single_file(self, file_path, required_columns):
+        self.start_time = -1
+        self.end_time = -1
+    @staticmethod
+    def parse_single_file(file_path, required_columns):
         try:
             df = pd.read_csv(file_path, encoding="iso-8859-1")
             if not all(col in df.columns for col in required_columns):
@@ -75,7 +77,7 @@ class Parser:
                     # Wywołanie callbacka po przetworzeniu pliku
                     if progress_callback:
                         progress_callback(processed_count, total_files)
-                    print(f"Processed {processed_count}/{total_files} files...")
+                    # print(f"Processed {processed_count}/{total_files} files...")
         else:
             print("Starting single-process parsing...")
             processed_count = 0
