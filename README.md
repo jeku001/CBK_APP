@@ -106,12 +106,11 @@ To run the application, follow these steps:
 3. Once completed, the parsed data will be ready for plotting or saving.
 
 ### Step 4: Plotting Data
-1. Click **Plot Data** to open the column selection window.
-2. Choose one or more columns to plot.
-3. Select a scale:
+1. Choose one or more columns to plot.
+2. Select a scale:
    - **Linear**: Standard scale.
    - **Logarithmic**: For data with a wide range of values.
-4. View the interactive plot. Use the red cursor to inspect specific points or zoom it without losing quality.
+3. View the interactive plot. Use the red cursor to inspect specific points or zoom it without losing quality.
 
 <h2 align="center">Plot Examples</h2>
 
