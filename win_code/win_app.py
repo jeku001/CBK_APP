@@ -7,6 +7,7 @@ import os
 import matplotlib
 from threading import Thread
 from win_tooltip import ToolTip
+import psutil
 matplotlib.use("TkAgg")
 
 
@@ -362,6 +363,11 @@ class App:
         plot_options_frame.configure(fg_color="transparent")
         plot_options_frame.configure(bg_color="transparent")
 
+    def update_cpu_usage(self):
+        cpu_usage = psutil.cpu_percent()
+        self.cpu_label.configure(text=f"CPU usage: {cpu_usage}%")
+        self.root.after(1000, self.update_cpu_usage)  # Aktualizuj co 1000 ms (1 sekundę)
+
     def terminate_app(self):
         self.root.destroy()
 
@@ -399,6 +405,10 @@ class App:
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
         self.canvas.pack(side="left", fill="both", expand=True)
         self.scrollbar.pack(side="right", fill="y")
+
+        self.cpu_label = ctk.CTkLabel(self.center_frame, text="CPU usage: 0%", font=("Arial", 10, "italic"))
+        self.cpu_label.grid(row=3, column=1, pady=10, sticky="w")  # Asumując, że status_label jest w column=0
+        self.update_cpu_usage()
 
         self.status_label = ctk.CTkLabel(self.center_frame, text="", text_color="blue", font=("Arial", 10, "italic"))
         self.status_label.grid(row=3, column=0, columnspan=3, pady=10)
