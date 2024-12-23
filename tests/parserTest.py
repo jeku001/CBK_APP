@@ -68,7 +68,7 @@ class Parser:
         # Use ThreadPoolExecutor if files are less than 500 or ProcessPoolExecutor if more,
         # assuming multiprocessing is enabled
         if self.workers > 1:
-            if total_files < 3000:
+            if total_files < 300:
                 executor_class = ThreadPoolExecutor
                 print("Less than 500 files to process, using ThreadPoolExecutor for parsing...")
                 print(f"{self.workers} parallel tasks ")
@@ -115,7 +115,7 @@ if __name__ == "__main__":
         ["'Wheel Sum Current(mA)"],
         start_year=None,
         end_year=None,
-        workers=4)
+        workers=8)
     for i in range(20):
         parsed_data = parser.parse_data_no_merging()
         print(f"{i}")

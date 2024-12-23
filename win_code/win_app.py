@@ -6,6 +6,7 @@ from win_plot import Plots
 import os
 import matplotlib
 from threading import Thread
+from win_tooltip import ToolTip
 matplotlib.use("TkAgg")
 
 
@@ -27,6 +28,7 @@ class App:
         self.plot_type_var = tk.StringVar(value="linear")
         self.mode_var = tk.StringVar(value="single")
         self.thread_number = 0
+        self.cpu_cores = os.cpu_count()
 
         # Layout konfiguracji siatki
         self.root.grid_rowconfigure(0, weight=1)
@@ -46,40 +48,10 @@ class App:
         }
 
         # Środkowy panel (status i wybór kolumn)
-        self.center_frame = ctk.CTkFrame(self.root, corner_radius=10)
+        self.center_frame = ctk.CTkFrame(self.root, corner_radius=10, bg_color="transparent")
         self.center_frame.grid(row=0, column=1, sticky="nswe", padx=10, pady=10)
         self.center_frame.grid_rowconfigure(2, weight=1)
         self.center_frame.grid_columnconfigure(1, weight=1)
-
-        # Etykieta postępu
-        self.progress_label = ctk.CTkLabel(self.center_frame, text="Files processed: 0/0", font=("Arial", 10))
-        self.progress_label.grid(row=5, column=0, columnspan=3, pady=5)
-
-        # Lewy panel (parsowanie)
-        self.left_frame = ctk.CTkFrame(self.root, width=200, corner_radius=10)
-        self.left_frame.grid(row=0, column=0, sticky="nswe", padx=10, pady=10)
-        self.left_frame.grid_rowconfigure(7, weight=1)
-
-        ctk.CTkLabel(self.left_frame, text="Parsing Options", font=("Arial", 16, "bold")).pack(pady=10)
-        ctk.CTkLabel(self.left_frame, text="Base Folder").pack(pady=5)
-
-        self.left_frame = ctk.CTkFrame(self.root, width=200, corner_radius=10)
-        self.left_frame.grid(row=0, column=0, sticky="nswe", padx=10, pady=10)
-        self.left_frame.grid_rowconfigure(5, weight=1)
-
-        ctk.CTkLabel(self.left_frame, text="Parsing Options", font=("Arial", 16, "bold")).pack(pady=10)
-        ctk.CTkLabel(self.left_frame, text="Base Folder").pack(pady=5)
-        self.folder_entry = ctk.CTkEntry(self.left_frame, width=200)
-        self.folder_entry.pack(pady=5)
-        ctk.CTkButton(self.left_frame, text="Browse", command=self.browse_folder).pack(pady=5)
-
-        ctk.CTkLabel(self.left_frame, text="Start Year").pack(pady=2)
-        self.start_year_entry = ctk.CTkEntry(self.left_frame, width=100)
-        self.start_year_entry.pack(pady=2)
-
-        ctk.CTkLabel(self.left_frame, text="End Year").pack(pady=2)
-        self.end_year_entry = ctk.CTkEntry(self.left_frame, width=100)
-        self.end_year_entry.pack(pady=2)
 
         ctk.CTkLabel(self.center_frame, text="File Pattern").grid(row=0, column=0, padx=10, pady=5, sticky="e")
         self.pattern_combo = ctk.CTkComboBox(self.center_frame, values=list(self.pattern_columns.keys()),
@@ -87,38 +59,13 @@ class App:
         self.pattern_combo.grid(row=0, column=1, padx=10, pady=5, sticky="w")
         self.pattern_combo.set("0-Power Board")
 
-        # Radio Buttons dla trybów Single i Multi
-        self.mode_frame = ctk.CTkFrame(self.left_frame)
-        self.mode_frame.pack(pady=10)
-
-        self.single_mode_button = ctk.CTkRadioButton(self.mode_frame, text="Single Mode",
-                                                     variable=self.mode_var, value="single",
-                                                     command=self.toggle_workers)
-        self.single_mode_button.pack(side="left")
-
-        self.multi_mode_button = ctk.CTkRadioButton(self.mode_frame, text="Parallel Mode",
-                                                    variable=self.mode_var, value="multi",
-                                                    command=self.toggle_workers)
-        self.multi_mode_button.pack(side="left")
-
-        # Suwak dla zadań równoległych
-        self.workers_slider = ctk.CTkSlider(self.left_frame, from_=2, to=16,
-                                            number_of_steps=14, command=self.update_worker_label)
-        self.workers_slider.set(2)
-        self.workers_slider.pack(pady=10)
-        self.workers_slider.configure(state="disabled")  # Początkowo dezaktywowany
-        self.worker_label = ctk.CTkLabel(self.left_frame, text="Parallel tasks: 2")
-        self.worker_label.pack(pady=10)
-
-        self.column_frame = ctk.CTkFrame(self.center_frame)
+        # Scrollable Frame
+        self.column_frame = ctk.CTkFrame(self.center_frame, fg_color="transparent")
         self.column_frame.grid(row=2, column=0, columnspan=3, pady=10, padx=10, sticky="nswe")
 
-
-        ctk.CTkButton(self.left_frame, text="Run Parser", command=self.parse_button_clicked).pack(pady=20)
-        # Scrollable Frame
         self.canvas = ctk.CTkCanvas(self.column_frame, width=200, height=200)
         self.scrollbar = ctk.CTkScrollbar(self.column_frame, orientation="vertical", command=self.canvas.yview)
-        self.scrollable_frame = ctk.CTkFrame(self.canvas)
+        self.scrollable_frame = ctk.CTkFrame(self.canvas, fg_color="transparent")
 
         self.scrollable_frame.bind(
             "<Configure>",
@@ -133,6 +80,96 @@ class App:
 
         self.status_label = ctk.CTkLabel(self.center_frame, text="", text_color="blue", font=("Arial", 10, "italic"))
         self.status_label.grid(row=3, column=0, columnspan=3, pady=10)
+
+        # Etykieta postępu
+        self.progress_label = ctk.CTkLabel(self.center_frame, text="Files processed: 0/0", font=("Arial", 10))
+        self.progress_label.grid(row=5, column=0, columnspan=3, pady=5)
+
+        # Lewy panel (parsowanie)
+        self.left_frame = ctk.CTkFrame(self.root, width=250, corner_radius=10)
+        self.left_frame.grid(row=0, column=0, sticky="nswe", padx=10, pady=10)
+        self.left_frame.grid_rowconfigure(7, weight=1)
+
+        ctk.CTkLabel(self.left_frame, text="Parsing Options", font=("Arial", 16, "bold")).pack(pady=10)
+        ctk.CTkLabel(self.left_frame, text="Base Folder").pack(pady=5)
+
+        self.folder_entry = ctk.CTkEntry(self.left_frame, width=230)
+        self.folder_entry.pack(pady=10)
+        ctk.CTkButton(self.left_frame, text="Browse", command=self.browse_folder).pack(pady=5)
+
+        # Dla etykiety "Start Year"
+        ctk.CTkLabel(self.left_frame, text="Start Year").pack(pady=(1, 0))  # Zmniejszamy górny margines
+        self.start_year_entry = ctk.CTkEntry(self.left_frame, width=100)
+        self.start_year_entry.pack(pady=(0, 5))  # Usuwamy górny margines, dodajemy tylko dolny
+
+        # Dla etykiety "End Year"
+        ctk.CTkLabel(self.left_frame, text="End Year").pack(pady=(1, 0))  # Zmniejszamy górny margines
+        self.end_year_entry = ctk.CTkEntry(self.left_frame, width=100)
+        self.end_year_entry.pack(pady=(0, 5))  # Usuwamy górny margines, dodajemy tylko dolny
+
+        # Kontenery dla przycisków radiowych i znaków zapytania
+        single_mode_container = ctk.CTkFrame(self.left_frame, fg_color="transparent")
+        single_mode_container.pack(pady=10)
+
+        self.single_mode_button = ctk.CTkRadioButton(single_mode_container, text="Single Mode",
+                                                     variable=self.mode_var, value="single",
+                                                     command=self.toggle_workers)
+        self.single_mode_button.pack(side='left', padx=(10, 2))
+
+        self.question_button_single = ctk.CTkButton(single_mode_container, text="?", width=20, text_color="#141414",
+                                                    fg_color="#edd7af", font=("Arial", 14, "bold"))
+        self.question_button_single.pack(side='left', padx=(2, 10))
+        self.create_tooltip(self.question_button_single, "Process files one by one. \n"
+                                                         "Recommended for smaller datasets \n"
+                                                         "or limited computational resources.")
+
+        multi_mode_container = ctk.CTkFrame(self.left_frame, fg_color="transparent")
+        multi_mode_container.pack(pady=10)
+
+        self.multi_mode_button = ctk.CTkRadioButton(multi_mode_container, text="Parallel Mode",
+                                                    variable=self.mode_var, value="multi",
+                                                    command=self.toggle_workers)
+        self.multi_mode_button.pack(side='left', padx=(10, 2))
+
+        self.question_button_multi = ctk.CTkButton(multi_mode_container, text="?", width=20, text_color="#141414",
+                                                   fg_color="#edd7af", font=("Arial", 14, "bold"))
+        self.question_button_multi.pack(side='left', padx=(2, 10))
+        self.create_tooltip(self.question_button_multi, "This mode processes multiple files simultaneously, "
+                                                        "using parallel threads. \n"
+                                                        "Ideal for larger data or device "
+                                                        "with higher computational power.")
+
+        # Suwak dla zadań równoległych
+        self.workers_slider = ctk.CTkSlider(self.left_frame, from_=2, to=self.cpu_cores,
+                                            number_of_steps=14, command=self.update_worker_label)
+        self.workers_slider.set(2)
+        self.workers_slider.pack(pady=10)
+        self.workers_slider.configure(state="disabled")
+
+        # Kontener dla etykiety i pytajnika
+        worker_label_frame = ctk.CTkFrame(self.left_frame, fg_color="transparent")  # Przezroczyste tło
+        worker_label_frame.pack(pady=(1, 10), fill="x")
+
+        # Frame wewnętrzny do zarządzania układem
+        inner_frame = ctk.CTkFrame(worker_label_frame, fg_color="transparent")
+        inner_frame.pack(anchor="center")
+
+        # Etykieta "Parallel tasks"
+        self.worker_label = ctk.CTkLabel(inner_frame, text="Parallel tasks: 2")
+        self.worker_label.pack(side="left", padx=(0, 5))  # Odstęp po prawej stronie
+
+        # Przycisk z pytajnikiem obok etykiety
+        self.worker_tooltip_button = ctk.CTkButton(inner_frame,text="?", width=20, text_color="#141414",
+                                                   fg_color="#edd7af", font=("Arial", 14, "bold"))
+        self.worker_tooltip_button.pack(side="left", padx=(5, 0))  # Odstęp po lewej stronie
+
+        self.create_tooltip(self.worker_tooltip_button,
+                            f"Adjust the number of parallel tasks.\n"
+                            f"This controls how many files are processed simultaneously.\n"
+                            f"Recommended: Up to the number of your CPU cores ({self.cpu_cores}).")
+
+
+        ctk.CTkButton(self.left_frame, text="Run Parser", command=self.parse_button_clicked).pack(pady=20)
 
         # Prawy panel (zapis i wykresy)
         self.right_frame = ctk.CTkFrame(self.root, width=200, corner_radius=10)
@@ -484,19 +521,24 @@ class App:
         # Przyciski radio dla wyboru typu wykresu
         linear_button = ctk.CTkRadioButton(self.plot_options_frame, text="Linear", variable=self.plot_type_var,
                                            value="linear", command=self.plot_type_changed)
-        linear_button.pack(side="left", padx=10, pady=10)
+        linear_button.pack(side="left", padx=15, pady=10)
 
         logarithmic_button = ctk.CTkRadioButton(self.plot_options_frame, text="Logarithmic",
                                                 variable=self.plot_type_var, value="logarithmic",
                                                 command=self.plot_type_changed)
-        logarithmic_button.pack(side="left", padx=10, pady=10)
+        logarithmic_button.pack(side="left", padx=0, pady=10)
 
-        self.plot_options_frame.configure(fg_color="white")  # Set foreground color
-        self.plot_options_frame.configure(bg_color="white")  # Set background color if supported
+        self.plot_options_frame.configure(fg_color="transparent")
+        self.plot_options_frame.configure(bg_color="transparent")
 
     def terminate_app(self):
         self.root.destroy()
 
+
+    def create_tooltip(self, widget, text):
+        tooltip = ToolTip(widget)
+        widget.bind('<Enter>', lambda e: tooltip.show_tip(text))
+        widget.bind('<Leave>', lambda e: tooltip.hide_tip())
 
 if __name__ == "__main__":
     import multiprocessing
