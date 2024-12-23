@@ -56,7 +56,7 @@ base_folder/
 Each file contains time-series data with columns such as:
 - `'Date (YYYY-MM-DD HH:MM:SS)`': Timestamp of the data.
 - `'Date (J2000 mseconds)`': Time in milliseconds since J2000 epoch.
-- Specific housekeeping parameters (e.g., temperatures, reset reasons).
+- Specific housekeeping parameters (e.g., temperatures, currents).
 
 ---
 
