@@ -10,16 +10,16 @@ from win_tooltip import ToolTip
 matplotlib.use("TkAgg")
 
 
-# Tkinter Application
 class App:
     def __init__(self, root):
-        ctk.set_appearance_mode("System")  # Możesz wybrać "Light" lub "Dark"
-        ctk.set_default_color_theme("blue")  # Motyw kolorystyczny
+        ctk.set_appearance_mode("System")
+        ctk.set_default_color_theme("blue")
 
         self.root = root
         self.root.title("Data Parser Application")
-        self.root.geometry("900x600")  # Ustawienie większego rozmiaru dla lepszego układu
+        self.root.geometry("900x600")
         self.parsed_data = None
+        self.base_folder = None
         self.file_pattern = "0-Power Board"
         self.additional_columns = []
         self.last_selected_pattern = "0-Power Board"
@@ -30,7 +30,6 @@ class App:
         self.thread_number = 0
         self.cpu_cores = os.cpu_count()
 
-        # Layout konfiguracji siatki
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_columnconfigure(1, weight=1)
 
@@ -47,7 +46,7 @@ class App:
             "9-Header Board": self.get_columns_9()
         }
 
-        # Środkowy panel (status i wybór kolumn)
+        # MIDDLE
         self.center_frame = ctk.CTkFrame(self.root, corner_radius=10, bg_color="transparent")
         self.center_frame.grid(row=0, column=1, sticky="nswe", padx=10, pady=10)
         self.center_frame.grid_rowconfigure(2, weight=1)
@@ -59,7 +58,7 @@ class App:
         self.pattern_combo.grid(row=0, column=1, padx=10, pady=5, sticky="w")
         self.pattern_combo.set("0-Power Board")
 
-        # Scrollable Frame
+        # FRAME FOR PARSE COLUMNS
         self.column_frame = ctk.CTkFrame(self.center_frame, fg_color="transparent")
         self.column_frame.grid(row=2, column=0, columnspan=3, pady=10, padx=10, sticky="nswe")
 
@@ -74,18 +73,22 @@ class App:
 
         self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
-
         self.canvas.pack(side="left", fill="both", expand=True)
         self.scrollbar.pack(side="right", fill="y")
 
         self.status_label = ctk.CTkLabel(self.center_frame, text="", text_color="blue", font=("Arial", 10, "italic"))
         self.status_label.grid(row=3, column=0, columnspan=3, pady=10)
 
-        # Etykieta postępu
+        # PROGRESS
         self.progress_label = ctk.CTkLabel(self.center_frame, text="Files processed: 0/0", font=("Arial", 10))
         self.progress_label.grid(row=5, column=0, columnspan=3, pady=5)
 
-        # Lewy panel (parsowanie)
+        self.progress_var = tk.DoubleVar()
+        self.progress_bar = ctk.CTkProgressBar(self.center_frame, variable=self.progress_var)
+        self.progress_bar.grid(row=4, column=0, columnspan=3, pady=5)
+        self.progress_bar.set(0)
+
+        # LEFT - PARSING
         self.left_frame = ctk.CTkFrame(self.root, width=250, corner_radius=10)
         self.left_frame.grid(row=0, column=0, sticky="nswe", padx=10, pady=10)
         self.left_frame.grid_rowconfigure(7, weight=1)
@@ -97,17 +100,15 @@ class App:
         self.folder_entry.pack(pady=10)
         ctk.CTkButton(self.left_frame, text="Browse", command=self.browse_folder).pack(pady=5)
 
-        # Dla etykiety "Start Year"
-        ctk.CTkLabel(self.left_frame, text="Start Year").pack(pady=(1, 0))  # Zmniejszamy górny margines
+        ctk.CTkLabel(self.left_frame, text="Start Year").pack(pady=(1, 0))
         self.start_year_entry = ctk.CTkEntry(self.left_frame, width=100)
-        self.start_year_entry.pack(pady=(0, 5))  # Usuwamy górny margines, dodajemy tylko dolny
+        self.start_year_entry.pack(pady=(0, 5))
 
-        # Dla etykiety "End Year"
-        ctk.CTkLabel(self.left_frame, text="End Year").pack(pady=(1, 0))  # Zmniejszamy górny margines
+        ctk.CTkLabel(self.left_frame, text="End Year").pack(pady=(1, 0))
         self.end_year_entry = ctk.CTkEntry(self.left_frame, width=100)
-        self.end_year_entry.pack(pady=(0, 5))  # Usuwamy górny margines, dodajemy tylko dolny
+        self.end_year_entry.pack(pady=(0, 5))
 
-        # Kontenery dla przycisków radiowych i znaków zapytania
+        # MODE BUTTONS
         single_mode_container = ctk.CTkFrame(self.left_frame, fg_color="transparent")
         single_mode_container.pack(pady=10)
 
@@ -139,27 +140,22 @@ class App:
                                                         "Ideal for larger data or device "
                                                         "with higher computational power.")
 
-        # Suwak dla zadań równoległych
         self.workers_slider = ctk.CTkSlider(self.left_frame, from_=2, to=self.cpu_cores,
                                             number_of_steps=14, command=self.update_worker_label)
         self.workers_slider.set(2)
         self.workers_slider.pack(pady=10)
         self.workers_slider.configure(state="disabled")
 
-        # Kontener dla etykiety i pytajnika
         worker_label_frame = ctk.CTkFrame(self.left_frame, fg_color="transparent")  # Przezroczyste tło
         worker_label_frame.pack(pady=(1, 10), fill="x")
 
-        # Frame wewnętrzny do zarządzania układem
         inner_frame = ctk.CTkFrame(worker_label_frame, fg_color="transparent")
         inner_frame.pack(anchor="center")
 
-        # Etykieta "Parallel tasks"
         self.worker_label = ctk.CTkLabel(inner_frame, text="Parallel tasks: 2")
         self.worker_label.pack(side="left", padx=(0, 5))  # Odstęp po prawej stronie
 
-        # Przycisk z pytajnikiem obok etykiety
-        self.worker_tooltip_button = ctk.CTkButton(inner_frame,text="?", width=20, text_color="#141414",
+        self.worker_tooltip_button = ctk.CTkButton(inner_frame, text="?", width=20, text_color="#141414",
                                                    fg_color="#edd7af", font=("Arial", 14, "bold"))
         self.worker_tooltip_button.pack(side="left", padx=(5, 0))  # Odstęp po lewej stronie
 
@@ -168,22 +164,20 @@ class App:
                             f"This controls how many files are processed simultaneously.\n"
                             f"Recommended: Up to the number of your CPU cores ({self.cpu_cores}).")
 
-
         ctk.CTkButton(self.left_frame, text="Run Parser", command=self.parse_button_clicked).pack(pady=20)
 
-        # Prawy panel (zapis i wykresy)
+        # RIGHT - SAVE AND PLOT
         self.right_frame = ctk.CTkFrame(self.root, width=200, corner_radius=10)
         self.right_frame.grid(row=0, column=2, sticky="nswe", padx=10, pady=10)
-        self.right_frame.grid_rowconfigure(4, weight=1)  # Zmiana tutaj, aby przycisk Exit był na dole
+        self.right_frame.grid_rowconfigure(4, weight=1)
 
         ctk.CTkLabel(self.right_frame, text="Plot and Save", font=("Arial", 16, "bold")).pack(pady=10)
         self.download_button = ctk.CTkButton(self.right_frame, text="Save Parsed File",
                                              command=self.download_parsed_file, state="disabled")
         self.download_button.pack(pady=10)
 
-        self.setup_plot_options()  # inicjowanie ramki na typ skali
+        self.setup_plot_options()
 
-        # Stworzenie scrollable frame dla kolumn do plotowania
         self.plot_column_frame = ctk.CTkFrame(self.right_frame)
         self.plot_column_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
@@ -204,23 +198,15 @@ class App:
         self.plot_column_scrollbar.pack(side="right", fill="y")
         ctk.CTkButton(self.right_frame, text="Plot Selected Columns", command=self.plot_selected_columns).pack(pady=10)
 
-        # Przycisk Exit teraz umieszczony na dole i z lekko czerwonym kolorem
         exit_button = ctk.CTkButton(self.right_frame, text="Exit", command=self.terminate_app, fg_color="#f73e3e")
         exit_button.pack(side="bottom", pady=10)
 
-        # Aktualizacja kolumn
         self.update_parse_columns()
-
-        # Pasek postępu
-        self.progress_var = tk.DoubleVar()
-        self.progress_bar = ctk.CTkProgressBar(self.center_frame, variable=self.progress_var)
-        self.progress_bar.grid(row=4, column=0, columnspan=3, pady=5)
-        self.progress_bar.set(0)
 
     def update_worker_label(self, value):
         self.worker_label.configure(text=f"Tasks: {int(value)}")
 
-    def update_parse_columns(self, event=None):
+    def update_parse_columns(self):
         selected_pattern = self.pattern_combo.get()
         columns = self.pattern_columns.get(selected_pattern, [])
         for widget in self.scrollable_frame.winfo_children():
@@ -243,10 +229,10 @@ class App:
 
         self.last_selected_pattern = selected_pattern
 
-    def on_pattern_selected(self, event=None):
+    def on_pattern_selected(self):
         selected_pattern = self.pattern_combo.get()
         self.file_pattern = selected_pattern
-        self.update_parse_columns(event)
+        self.update_parse_columns()
         self.update_plot_columns_list()
 
     def update_progress_callback(self, processed_count, total_files):
@@ -500,7 +486,6 @@ class App:
             messagebox.showerror("Error", "No columns selected for plotting.")
             return
 
-        # Przekazanie odpowiedniego typu plotowania
         plot_type_var = self.plot_type_var.get()
         plots = Plots()
         plots.plot(self.parsed_data, selected_columns, plot_type_var)
@@ -510,35 +495,33 @@ class App:
         print(f"Plot type changed to: {current_plot_type}")
 
     def setup_plot_options(self):
-        # Ramka dla opcji wykresu
-        self.plot_options_frame = ctk.CTkFrame(self.right_frame)
-        self.plot_options_frame.pack(pady=10, fill='x', expand=False)
+        plot_options_frame = ctk.CTkFrame(self.right_frame)
+        plot_options_frame.pack(pady=10, fill='x', expand=False)
 
-        # Tytuł sekcji
-        plot_options_label = ctk.CTkLabel(self.plot_options_frame, text="Plot Type Options", font=("Arial", 12, "bold"))
+        plot_options_label = ctk.CTkLabel(plot_options_frame, text="Plot Type Options", font=("Arial", 12, "bold"))
         plot_options_label.pack(pady=(10, 5))
 
-        # Przyciski radio dla wyboru typu wykresu
-        linear_button = ctk.CTkRadioButton(self.plot_options_frame, text="Linear", variable=self.plot_type_var,
+        linear_button = ctk.CTkRadioButton(plot_options_frame, text="Linear", variable=self.plot_type_var,
                                            value="linear", command=self.plot_type_changed)
         linear_button.pack(side="left", padx=15, pady=10)
 
-        logarithmic_button = ctk.CTkRadioButton(self.plot_options_frame, text="Logarithmic",
+        logarithmic_button = ctk.CTkRadioButton(plot_options_frame, text="Logarithmic",
                                                 variable=self.plot_type_var, value="logarithmic",
                                                 command=self.plot_type_changed)
         logarithmic_button.pack(side="left", padx=0, pady=10)
 
-        self.plot_options_frame.configure(fg_color="transparent")
-        self.plot_options_frame.configure(bg_color="transparent")
+        plot_options_frame.configure(fg_color="transparent")
+        plot_options_frame.configure(bg_color="transparent")
 
     def terminate_app(self):
         self.root.destroy()
 
-
-    def create_tooltip(self, widget, text):
+    @staticmethod
+    def create_tooltip(widget, text):
         tooltip = ToolTip(widget)
         widget.bind('<Enter>', lambda e: tooltip.show_tip(text))
         widget.bind('<Leave>', lambda e: tooltip.hide_tip())
+
 
 if __name__ == "__main__":
     import multiprocessing
