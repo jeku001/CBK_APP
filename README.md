@@ -10,6 +10,8 @@
   - [Step 4: Plotting Data](#step-4-plotting-data)
   - [Optional: Saving Parsed Data](#optional-saving-parsed-data)
 - [Data Source and Structure](#data-source-and-structure)
+  - [Source of Data](#source-of-data)
+  - [Data Format](#data-format)
 - [Acknowledgements](#acknowledgements)
 
 ---
