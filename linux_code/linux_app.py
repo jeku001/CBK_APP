@@ -346,36 +346,6 @@ class App:
         tk.Button(plot_window, text="Plot Selected",
                   command=lambda: self.confirm_and_plot(plot_window, column_listbox, plot_type)).pack(pady=5)
 
-    def plot_loop(self):
-        def plot_and_show_options():
-            selected_indices = self.column_listbox.curselection()
-            selected_columns = [self.column_listbox.get(i) for i in selected_indices]
-
-            if not selected_columns:
-                messagebox.showerror("Error", "No columns selected for plotting.")
-                return
-
-            plots = Plots()
-            plots.plot(self.parsed_data, selected_columns)
-
-            options_window = tk.Toplevel(self.root)
-            options_window.title("Plot Options")
-            options_window.geometry("300x150")
-
-            tk.Label(options_window, text="Choose an action:").pack(pady=10)
-
-            tk.Button(options_window, text="Download Plot", command=lambda: self.download_plot(options_window)).pack(
-                pady=5)
-
-            tk.Button(options_window, text="Move to Another", command=lambda: options_window.destroy()).pack(pady=5)
-
-            tk.Button(options_window, text="Terminate", command=lambda: self.terminate_app(options_window)).pack(pady=5)
-
-        while True:
-            plot_and_show_options()
-            if hasattr(self, 'terminate') and self.terminate:
-                break
-
     def download_plot(self, window):
         plt.savefig("plot_output.pdf", format="pdf")
         messagebox.showinfo("Success", "Plot saved as plot_output.pdf")
