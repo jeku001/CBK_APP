@@ -4,7 +4,7 @@ UAM_BRITE/
 !win_app/
 !linux_code
 !win_code
-
+.idea
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
