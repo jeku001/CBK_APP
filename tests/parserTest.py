@@ -61,7 +61,6 @@ class Parser:
         scan_duration = scan_end_time - scan_start_time
         print(f"File scanning completed in {scan_duration:.2f} seconds")
         print(f"Found {len(files_to_process)} files to process.")
-
         data_list = []
         total_files = len(files_to_process)
 
