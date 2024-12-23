@@ -105,13 +105,12 @@ class Parser:
             long_df = pd.concat(data_list, ignore_index=True)
         else:
             long_df = pd.DataFrame(columns=required_columns)
-
+        self.end_time = time.time()
         long_df = long_df.sort_values(by=["'Date (J2000 mseconds)"], ascending=True)
         if "'Date (YYYY-MM-DD HH:MM:SS)" in long_df.columns:
             long_df["'Date (YYYY-MM-DD HH:MM:SS)"] = pd.to_datetime(long_df["'Date (YYYY-MM-DD HH:MM:SS)"])
 
-        self.end_time = time.time()
         total_duration = self.end_time - self.start_time
-        print(f"{threading.current_thread()}: Processing completed in {total_duration:.2f} seconds.")
+        print(f"{threading.current_thread()}: Processing completed in {total_duration:.2f} seconds")
 
         return long_df

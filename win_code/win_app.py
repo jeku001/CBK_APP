@@ -17,7 +17,7 @@ class App:
 
         self.root = root
         self.root.title("Data Parser Application")
-        self.root.geometry("900x600")
+        self.root.geometry("800x600")
         self.parsed_data = None
         self.base_folder = None
         self.file_pattern = "0-Power Board"
@@ -30,6 +30,8 @@ class App:
         self.thread_number = 0
         self.cpu_cores = os.cpu_count()
         self.progress_var = tk.DoubleVar()
+        self.end_year_entry = None
+        self.start_year_entry = None
         self.pattern_columns = {
             "0-Power Board": self.get_columns_0(),
             "1-BCDR0": self.get_columns_1(),
@@ -76,11 +78,11 @@ class App:
 
         self.last_selected_pattern = selected_pattern
 
-    def on_pattern_selected(self):
-        selected_pattern = self.pattern_combo.get()
-        self.file_pattern = selected_pattern
+    def on_pattern_selected(self, value):
+        self.file_pattern = self.pattern_combo.get()
         self.update_parse_columns()
-        self.update_plot_columns_list()
+        # self.update_plot_columns_list()
+        print(f"file pattern: {value}")
 
     def update_progress_callback(self, processed_count, total_files):
         try:
@@ -409,7 +411,6 @@ class App:
         self.progress_bar = ctk.CTkProgressBar(self.center_frame, variable=self.progress_var)
         self.progress_bar.grid(row=4, column=0, columnspan=3, pady=5)
         self.progress_bar.set(0)
-
 
     def setup_left_frame(self):
         self.left_frame.grid(row=0, column=0, sticky="nswe", padx=10, pady=10)
