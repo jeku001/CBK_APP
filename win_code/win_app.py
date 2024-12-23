@@ -26,6 +26,7 @@ class App:
         self.plot_column_checkboxes = {}
         self.plot_type_var = tk.StringVar(value="linear")
         self.mode_var = tk.StringVar(value="single")
+        self.thread_number = 0
 
         # Layout konfiguracji siatki
         self.root.grid_rowconfigure(0, weight=1)
@@ -228,8 +229,11 @@ class App:
             self.folder_entry.insert(0, folder_selected)
 
     def parse_button_clicked(self):
+        thread_name = "run_parser_thread_" + str(self.thread_number)
         new_thread = Thread(target=self.run_parser,
-                            daemon=True)
+                            daemon=True, name=thread_name)
+        print(f"starting thread named {thread_name}")
+        self.thread_number += 1
         new_thread.start()
 
     def run_parser(self):
@@ -284,13 +288,11 @@ class App:
 
     def toggle_workers(self):
         mode = self.mode_var.get()
-        print(f"Toggle workers called, mode: {mode}")  # Debug print
+        print(f"mode: {mode}")  # Debug print
         if mode == "multi":
             self.workers_slider.configure(state="normal")
-            print("Slider enabled")  # Debug print
         else:
             self.workers_slider.configure(state="disabled")
-            print("Slider disabled")  # Debug print
 
     def download_parsed_file(self):
         if self.parsed_data is not None and not self.parsed_data.empty:
@@ -500,7 +502,7 @@ if __name__ == "__main__":
     import multiprocessing
 
     multiprocessing.freeze_support()
-
+    print(f"app starting")
     root = tk.Tk()
     app = App(root)
     root.mainloop()

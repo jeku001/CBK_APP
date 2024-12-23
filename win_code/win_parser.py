@@ -1,3 +1,4 @@
+import threading
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import os
 import time
@@ -24,7 +25,7 @@ class Parser:
             data_sorted = selected_data.sort_values(by=["'Date (J2000 mseconds)"], ascending=True)
             return data_sorted
         except Exception as e:
-            print(f"Error processing file {file_path}: {e}")
+            print(f"{threading.current_thread()}: Error processing file {file_path}: {e}")
             return pd.DataFrame(columns=required_columns)
 
     def parse_data_no_merging(self, file_pattern="0-Power Board", progress_callback=None):
@@ -59,8 +60,8 @@ class Parser:
 
         scan_end_time = time.time()
         scan_duration = scan_end_time - scan_start_time
-        print(f"File scanning completed in {scan_duration:.2f} seconds")
-        print(f"Found {len(files_to_process)} files to process.")
+        print(f"{threading.current_thread()}: File scanning completed in {scan_duration:.2f} seconds")
+        print(f"{threading.current_thread()}: Found {len(files_to_process)} files to process.")
 
         data_list = []
         total_files = len(files_to_process)
@@ -70,12 +71,12 @@ class Parser:
         if self.workers > 1:
             if total_files < 500:
                 executor_class = ThreadPoolExecutor
-                print("Less than 500 files to process, using ThreadPoolExecutor for parsing...")
-                print(f"{self.workers} parallel tasks ")
+                print(f"{threading.current_thread()}: Less than 500 files to process, using ThreadPoolExecutor for parsing...")
+                print(f"{threading.current_thread()}: {self.workers} parallel tasks ")
             else:
                 executor_class = ProcessPoolExecutor
-                print("More than 500 files to process, using ProcessPoolExecutor for parsing...")
-                print(f"{self.workers} parallel tasks ")
+                print(f"{threading.current_thread()}: More than 500 files to process, using ProcessPoolExecutor for parsing...")
+                print(f"{threading.current_thread()}: {self.workers} parallel tasks ")
 
             processed_count = 0
             with executor_class(max_workers=self.workers) as executor:
@@ -89,7 +90,7 @@ class Parser:
                         progress_callback(processed_count, total_files)
                     # print(f"Processed {processed_count}/{total_files} files...")
         else:
-            print("Using single-threaded parsing...")
+            print("{threading.current_thread()}: Using single-threaded parsing...")
             processed_count = 0
             for fpath in files_to_process:
                 res_df = self.parse_single_file(fpath, required_columns)
@@ -111,6 +112,6 @@ class Parser:
 
         self.end_time = time.time()
         total_duration = self.end_time - self.start_time
-        print(f"Processing completed in {total_duration:.2f} seconds (including file scanning).")
+        print(f"{threading.current_thread()}: Processing completed in {total_duration:.2f} seconds.")
 
         return long_df
