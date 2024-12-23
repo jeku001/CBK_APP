@@ -29,10 +29,7 @@ class App:
         self.mode_var = tk.StringVar(value="single")
         self.thread_number = 0
         self.cpu_cores = os.cpu_count()
-
-        self.root.grid_rowconfigure(0, weight=1)
-        self.root.grid_columnconfigure(1, weight=1)
-
+        self.progress_var = tk.DoubleVar()
         self.pattern_columns = {
             "0-Power Board": self.get_columns_0(),
             "1-BCDR0": self.get_columns_1(),
@@ -45,163 +42,13 @@ class App:
             "8-ADC_SUB": self.get_columns_8(),
             "9-Header Board": self.get_columns_9()
         }
-
-        # MIDDLE
-        self.center_frame = ctk.CTkFrame(self.root, corner_radius=10, bg_color="transparent")
-        self.center_frame.grid(row=0, column=1, sticky="nswe", padx=10, pady=10)
-        self.center_frame.grid_rowconfigure(2, weight=1)
-        self.center_frame.grid_columnconfigure(1, weight=1)
-
-        ctk.CTkLabel(self.center_frame, text="File Pattern").grid(row=0, column=0, padx=10, pady=5, sticky="e")
-        self.pattern_combo = ctk.CTkComboBox(self.center_frame, values=list(self.pattern_columns.keys()),
-                                             command=self.on_pattern_selected)
-        self.pattern_combo.grid(row=0, column=1, padx=10, pady=5, sticky="w")
-        self.pattern_combo.set("0-Power Board")
-
-        # FRAME FOR PARSE COLUMNS
-        self.column_frame = ctk.CTkFrame(self.center_frame, fg_color="transparent")
-        self.column_frame.grid(row=2, column=0, columnspan=3, pady=10, padx=10, sticky="nswe")
-
-        self.canvas = ctk.CTkCanvas(self.column_frame, width=200, height=200)
-        self.scrollbar = ctk.CTkScrollbar(self.column_frame, orientation="vertical", command=self.canvas.yview)
-        self.scrollable_frame = ctk.CTkFrame(self.canvas, fg_color="transparent")
-
-        self.scrollable_frame.bind(
-            "<Configure>",
-            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-        )
-
-        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
-        self.canvas.configure(yscrollcommand=self.scrollbar.set)
-        self.canvas.pack(side="left", fill="both", expand=True)
-        self.scrollbar.pack(side="right", fill="y")
-
-        self.status_label = ctk.CTkLabel(self.center_frame, text="", text_color="blue", font=("Arial", 10, "italic"))
-        self.status_label.grid(row=3, column=0, columnspan=3, pady=10)
-
-        # PROGRESS
-        self.progress_label = ctk.CTkLabel(self.center_frame, text="Files processed: 0/0", font=("Arial", 10))
-        self.progress_label.grid(row=5, column=0, columnspan=3, pady=5)
-
-        self.progress_var = tk.DoubleVar()
-        self.progress_bar = ctk.CTkProgressBar(self.center_frame, variable=self.progress_var)
-        self.progress_bar.grid(row=4, column=0, columnspan=3, pady=5)
-        self.progress_bar.set(0)
-
-        # LEFT - PARSING
         self.left_frame = ctk.CTkFrame(self.root, width=250, corner_radius=10)
-        self.left_frame.grid(row=0, column=0, sticky="nswe", padx=10, pady=10)
-        self.left_frame.grid_rowconfigure(7, weight=1)
-
-        ctk.CTkLabel(self.left_frame, text="Parsing Options", font=("Arial", 16, "bold")).pack(pady=10)
-        ctk.CTkLabel(self.left_frame, text="Base Folder").pack(pady=5)
-
-        self.folder_entry = ctk.CTkEntry(self.left_frame, width=230)
-        self.folder_entry.pack(pady=10)
-        ctk.CTkButton(self.left_frame, text="Browse", command=self.browse_folder).pack(pady=5)
-
-        ctk.CTkLabel(self.left_frame, text="Start Year").pack(pady=(1, 0))
-        self.start_year_entry = ctk.CTkEntry(self.left_frame, width=100)
-        self.start_year_entry.pack(pady=(0, 5))
-
-        ctk.CTkLabel(self.left_frame, text="End Year").pack(pady=(1, 0))
-        self.end_year_entry = ctk.CTkEntry(self.left_frame, width=100)
-        self.end_year_entry.pack(pady=(0, 5))
-
-        # MODE BUTTONS
-        single_mode_container = ctk.CTkFrame(self.left_frame, fg_color="transparent")
-        single_mode_container.pack(pady=10)
-
-        self.single_mode_button = ctk.CTkRadioButton(single_mode_container, text="Single Mode",
-                                                     variable=self.mode_var, value="single",
-                                                     command=self.toggle_workers)
-        self.single_mode_button.pack(side='left', padx=(10, 2))
-
-        self.question_button_single = ctk.CTkButton(single_mode_container, text="?", width=20, text_color="#141414",
-                                                    fg_color="#edd7af", font=("Arial", 14, "bold"))
-        self.question_button_single.pack(side='left', padx=(2, 10))
-        self.create_tooltip(self.question_button_single, "Process files one by one. \n"
-                                                         "Recommended for smaller datasets \n"
-                                                         "or limited computational resources.")
-
-        multi_mode_container = ctk.CTkFrame(self.left_frame, fg_color="transparent")
-        multi_mode_container.pack(pady=10)
-
-        self.multi_mode_button = ctk.CTkRadioButton(multi_mode_container, text="Parallel Mode",
-                                                    variable=self.mode_var, value="multi",
-                                                    command=self.toggle_workers)
-        self.multi_mode_button.pack(side='left', padx=(10, 2))
-
-        self.question_button_multi = ctk.CTkButton(multi_mode_container, text="?", width=20, text_color="#141414",
-                                                   fg_color="#edd7af", font=("Arial", 14, "bold"))
-        self.question_button_multi.pack(side='left', padx=(2, 10))
-        self.create_tooltip(self.question_button_multi, "This mode processes multiple files simultaneously, "
-                                                        "using parallel threads. \n"
-                                                        "Ideal for larger data or device "
-                                                        "with higher computational power.")
-
-        self.workers_slider = ctk.CTkSlider(self.left_frame, from_=2, to=self.cpu_cores,
-                                            number_of_steps=14, command=self.update_worker_label)
-        self.workers_slider.set(2)
-        self.workers_slider.pack(pady=10)
-        self.workers_slider.configure(state="disabled")
-
-        worker_label_frame = ctk.CTkFrame(self.left_frame, fg_color="transparent")  # Przezroczyste tło
-        worker_label_frame.pack(pady=(1, 10), fill="x")
-
-        inner_frame = ctk.CTkFrame(worker_label_frame, fg_color="transparent")
-        inner_frame.pack(anchor="center")
-
-        self.worker_label = ctk.CTkLabel(inner_frame, text="Parallel tasks: 2")
-        self.worker_label.pack(side="left", padx=(0, 5))  # Odstęp po prawej stronie
-
-        self.worker_tooltip_button = ctk.CTkButton(inner_frame, text="?", width=20, text_color="#141414",
-                                                   fg_color="#edd7af", font=("Arial", 14, "bold"))
-        self.worker_tooltip_button.pack(side="left", padx=(5, 0))  # Odstęp po lewej stronie
-
-        self.create_tooltip(self.worker_tooltip_button,
-                            f"Adjust the number of parallel tasks.\n"
-                            f"This controls how many files are processed simultaneously.\n"
-                            f"Recommended: Up to the number of your CPU cores ({self.cpu_cores}).")
-
-        ctk.CTkButton(self.left_frame, text="Run Parser", command=self.parse_button_clicked).pack(pady=20)
-
-        # RIGHT - SAVE AND PLOT
+        self.center_frame = ctk.CTkFrame(self.root, corner_radius=10, bg_color="transparent")
         self.right_frame = ctk.CTkFrame(self.root, width=200, corner_radius=10)
-        self.right_frame.grid(row=0, column=2, sticky="nswe", padx=10, pady=10)
-        self.right_frame.grid_rowconfigure(4, weight=1)
 
-        ctk.CTkLabel(self.right_frame, text="Plot and Save", font=("Arial", 16, "bold")).pack(pady=10)
-        self.download_button = ctk.CTkButton(self.right_frame, text="Save Parsed File",
-                                             command=self.download_parsed_file, state="disabled")
-        self.download_button.pack(pady=10)
-
-        self.setup_plot_options()
-
-        self.plot_column_frame = ctk.CTkFrame(self.right_frame)
-        self.plot_column_frame.pack(fill="both", expand=True, padx=10, pady=10)
-
-        self.plot_column_canvas = ctk.CTkCanvas(self.plot_column_frame, width=200, height=200)
-        self.plot_column_scrollbar = ctk.CTkScrollbar(self.plot_column_frame, orientation="vertical",
-                                                      command=self.plot_column_canvas.yview)
-        self.plot_column_scrollable_frame = ctk.CTkFrame(self.plot_column_canvas)
-
-        self.plot_column_scrollable_frame.bind(
-            "<Configure>",
-            lambda e: self.plot_column_canvas.configure(scrollregion=self.plot_column_canvas.bbox("all"))
-        )
-
-        self.plot_column_canvas.create_window((0, 0), window=self.plot_column_scrollable_frame, anchor="nw")
-        self.plot_column_canvas.configure(yscrollcommand=self.plot_column_scrollbar.set)
-
-        self.plot_column_canvas.pack(side="left", fill="both", expand=True)
-        self.plot_column_scrollbar.pack(side="right", fill="y")
-        ctk.CTkButton(self.right_frame, text="Plot Selected Columns", command=self.plot_selected_columns).pack(pady=10)
-
-        exit_button = ctk.CTkButton(self.right_frame, text="Exit", command=self.terminate_app, fg_color="#f73e3e")
-        exit_button.pack(side="bottom", pady=10)
-
-        self.update_parse_columns()
+        self.setup_center_frame()
+        self.setup_left_frame()
+        self.setup_right_frame()
 
     def update_worker_label(self, value):
         self.worker_label.configure(text=f"Tasks: {int(value)}")
@@ -521,6 +368,161 @@ class App:
         tooltip = ToolTip(widget)
         widget.bind('<Enter>', lambda e: tooltip.show_tip(text))
         widget.bind('<Leave>', lambda e: tooltip.hide_tip())
+
+    def setup_center_frame(self):
+        self.center_frame.grid(row=0, column=1, sticky="nswe", padx=10, pady=10)
+        self.center_frame.grid_rowconfigure(2, weight=1)
+        self.center_frame.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkLabel(self.center_frame, text="File Pattern").grid(row=0, column=0, padx=10, pady=5, sticky="e")
+        self.pattern_combo = ctk.CTkComboBox(self.center_frame, values=list(self.pattern_columns.keys()),
+                                             command=self.on_pattern_selected)
+        self.pattern_combo.grid(row=0, column=1, padx=10, pady=5, sticky="w")
+        self.pattern_combo.set("0-Power Board")
+
+        # FRAME FOR PARSE COLUMNS
+        self.column_frame = ctk.CTkFrame(self.center_frame, fg_color="transparent")
+        self.column_frame.grid(row=2, column=0, columnspan=3, pady=10, padx=10, sticky="nswe")
+
+        self.canvas = ctk.CTkCanvas(self.column_frame, width=200, height=200)
+        self.scrollbar = ctk.CTkScrollbar(self.column_frame, orientation="vertical", command=self.canvas.yview)
+        self.scrollable_frame = ctk.CTkFrame(self.canvas, fg_color="transparent")
+
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        )
+
+        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.scrollbar.pack(side="right", fill="y")
+
+        self.status_label = ctk.CTkLabel(self.center_frame, text="", text_color="blue", font=("Arial", 10, "italic"))
+        self.status_label.grid(row=3, column=0, columnspan=3, pady=10)
+
+        # PROGRESS
+        self.progress_label = ctk.CTkLabel(self.center_frame, text="Files processed: 0/0", font=("Arial", 10))
+        self.progress_label.grid(row=5, column=0, columnspan=3, pady=5)
+
+        self.progress_var = tk.DoubleVar()
+        self.progress_bar = ctk.CTkProgressBar(self.center_frame, variable=self.progress_var)
+        self.progress_bar.grid(row=4, column=0, columnspan=3, pady=5)
+        self.progress_bar.set(0)
+
+
+    def setup_left_frame(self):
+        self.left_frame.grid(row=0, column=0, sticky="nswe", padx=10, pady=10)
+        self.left_frame.grid_rowconfigure(7, weight=1)
+
+        ctk.CTkLabel(self.left_frame, text="Parsing Options", font=("Arial", 16, "bold")).pack(pady=10)
+        ctk.CTkLabel(self.left_frame, text="Base Folder").pack(pady=5)
+
+        self.folder_entry = ctk.CTkEntry(self.left_frame, width=230)
+        self.folder_entry.pack(pady=10)
+        ctk.CTkButton(self.left_frame, text="Browse", command=self.browse_folder).pack(pady=5)
+
+        ctk.CTkLabel(self.left_frame, text="Start Year").pack(pady=(1, 0))
+        self.start_year_entry = ctk.CTkEntry(self.left_frame, width=100)
+        self.start_year_entry.pack(pady=(0, 5))
+
+        ctk.CTkLabel(self.left_frame, text="End Year").pack(pady=(1, 0))
+        self.end_year_entry = ctk.CTkEntry(self.left_frame, width=100)
+        self.end_year_entry.pack(pady=(0, 5))
+
+        # MODE BUTTONS
+        single_mode_container = ctk.CTkFrame(self.left_frame, fg_color="transparent")
+        single_mode_container.pack(pady=10)
+
+        self.single_mode_button = ctk.CTkRadioButton(single_mode_container, text="Single Mode",
+                                                     variable=self.mode_var, value="single",
+                                                     command=self.toggle_workers)
+        self.single_mode_button.pack(side='left', padx=(10, 2))
+
+        self.question_button_single = ctk.CTkButton(single_mode_container, text="?", width=20, text_color="#141414",
+                                                    fg_color="#edd7af", font=("Arial", 14, "bold"))
+        self.question_button_single.pack(side='left', padx=(2, 10))
+        self.create_tooltip(self.question_button_single, "Process files one by one. \n"
+                                                         "Recommended for smaller datasets \n"
+                                                         "or limited computational resources.")
+
+        multi_mode_container = ctk.CTkFrame(self.left_frame, fg_color="transparent")
+        multi_mode_container.pack(pady=10)
+
+        self.multi_mode_button = ctk.CTkRadioButton(multi_mode_container, text="Parallel Mode",
+                                                    variable=self.mode_var, value="multi",
+                                                    command=self.toggle_workers)
+        self.multi_mode_button.pack(side='left', padx=(10, 2))
+
+        self.question_button_multi = ctk.CTkButton(multi_mode_container, text="?", width=20, text_color="#141414",
+                                                   fg_color="#edd7af", font=("Arial", 14, "bold"))
+        self.question_button_multi.pack(side='left', padx=(2, 10))
+        self.create_tooltip(self.question_button_multi, "This mode processes multiple files simultaneously, "
+                                                        "using parallel threads. \n"
+                                                        "Ideal for larger data or device "
+                                                        "with higher computational power.")
+
+        self.workers_slider = ctk.CTkSlider(self.left_frame, from_=2, to=self.cpu_cores,
+                                            number_of_steps=14, command=self.update_worker_label)
+        self.workers_slider.set(2)
+        self.workers_slider.pack(pady=10)
+        self.workers_slider.configure(state="disabled")
+
+        worker_label_frame = ctk.CTkFrame(self.left_frame, fg_color="transparent")  # Przezroczyste tło
+        worker_label_frame.pack(pady=(1, 10), fill="x")
+
+        inner_frame = ctk.CTkFrame(worker_label_frame, fg_color="transparent")
+        inner_frame.pack(anchor="center")
+
+        self.worker_label = ctk.CTkLabel(inner_frame, text="Parallel tasks: 2")
+        self.worker_label.pack(side="left", padx=(0, 5))  # Odstęp po prawej stronie
+
+        self.worker_tooltip_button = ctk.CTkButton(inner_frame, text="?", width=20, text_color="#141414",
+                                                   fg_color="#edd7af", font=("Arial", 14, "bold"))
+        self.worker_tooltip_button.pack(side="left", padx=(5, 0))  # Odstęp po lewej stronie
+
+        self.create_tooltip(self.worker_tooltip_button,
+                            f"Adjust the number of parallel tasks.\n"
+                            f"This controls how many files are processed simultaneously.\n"
+                            f"Recommended: Up to the number of your CPU cores ({self.cpu_cores}).")
+
+        ctk.CTkButton(self.left_frame, text="Run Parser", command=self.parse_button_clicked).pack(pady=20)
+
+    def setup_right_frame(self):
+        self.right_frame.grid(row=0, column=2, sticky="nswe", padx=10, pady=10)
+        self.right_frame.grid_rowconfigure(4, weight=1)
+
+        ctk.CTkLabel(self.right_frame, text="Plot and Save", font=("Arial", 16, "bold")).pack(pady=10)
+        self.download_button = ctk.CTkButton(self.right_frame, text="Save Parsed File",
+                                             command=self.download_parsed_file, state="disabled")
+        self.download_button.pack(pady=10)
+
+        self.setup_plot_options()
+
+        self.plot_column_frame = ctk.CTkFrame(self.right_frame)
+        self.plot_column_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        self.plot_column_canvas = ctk.CTkCanvas(self.plot_column_frame, width=200, height=200)
+        self.plot_column_scrollbar = ctk.CTkScrollbar(self.plot_column_frame, orientation="vertical",
+                                                      command=self.plot_column_canvas.yview)
+        self.plot_column_scrollable_frame = ctk.CTkFrame(self.plot_column_canvas)
+
+        self.plot_column_scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.plot_column_canvas.configure(scrollregion=self.plot_column_canvas.bbox("all"))
+        )
+
+        self.plot_column_canvas.create_window((0, 0), window=self.plot_column_scrollable_frame, anchor="nw")
+        self.plot_column_canvas.configure(yscrollcommand=self.plot_column_scrollbar.set)
+
+        self.plot_column_canvas.pack(side="left", fill="both", expand=True)
+        self.plot_column_scrollbar.pack(side="right", fill="y")
+        ctk.CTkButton(self.right_frame, text="Plot Selected Columns", command=self.plot_selected_columns).pack(pady=10)
+
+        exit_button = ctk.CTkButton(self.right_frame, text="Exit", command=self.terminate_app, fg_color="#f73e3e")
+        exit_button.pack(side="bottom", pady=10)
+
+        self.update_parse_columns()
 
 
 if __name__ == "__main__":
