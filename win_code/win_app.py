@@ -5,7 +5,7 @@ from win_parser import Parser
 from win_plot import Plots
 import os
 import matplotlib
-
+from threading import Thread
 matplotlib.use("TkAgg")
 
 
@@ -72,31 +72,19 @@ class App:
         self.folder_entry.pack(pady=5)
         ctk.CTkButton(self.left_frame, text="Browse", command=self.browse_folder).pack(pady=5)
 
-        ctk.CTkLabel(self.left_frame, text="Start Year").pack(pady=5)
+        ctk.CTkLabel(self.left_frame, text="Start Year").pack(pady=2)
         self.start_year_entry = ctk.CTkEntry(self.left_frame, width=100)
-        self.start_year_entry.pack(pady=5)
+        self.start_year_entry.pack(pady=2)
 
-        ctk.CTkLabel(self.left_frame, text="End Year").pack(pady=5)
+        ctk.CTkLabel(self.left_frame, text="End Year").pack(pady=2)
         self.end_year_entry = ctk.CTkEntry(self.left_frame, width=100)
-        self.end_year_entry.pack(pady=5)
+        self.end_year_entry.pack(pady=2)
 
         ctk.CTkLabel(self.center_frame, text="File Pattern").grid(row=0, column=0, padx=10, pady=5, sticky="e")
         self.pattern_combo = ctk.CTkComboBox(self.center_frame, values=list(self.pattern_columns.keys()),
                                              command=self.on_pattern_selected)
         self.pattern_combo.grid(row=0, column=1, padx=10, pady=5, sticky="w")
         self.pattern_combo.set("0-Power Board")
-
-        # Suwak dla zadań równoległych
-        self.workers_slider = ctk.CTkSlider(self.left_frame, from_=2, to=16,
-                                            number_of_steps=14, command=self.update_worker_label)
-        self.workers_slider.set(2)
-        self.workers_slider.pack(pady=10)
-        self.workers_slider.configure(state="disabled")  # Początkowo dezaktywowany
-        self.worker_label = ctk.CTkLabel(self.left_frame, text="Parallel tasks: 2")
-        self.worker_label.pack(pady=10)
-
-        self.column_frame = ctk.CTkFrame(self.center_frame)
-        self.column_frame.grid(row=2, column=0, columnspan=3, pady=10, padx=10, sticky="nswe")
 
         # Radio Buttons dla trybów Single i Multi
         self.mode_frame = ctk.CTkFrame(self.left_frame)
@@ -112,7 +100,20 @@ class App:
                                                     command=self.toggle_workers)
         self.multi_mode_button.pack(side="left")
 
-        ctk.CTkButton(self.left_frame, text="Run Parser", command=self.run_parser).pack(pady=20)
+        # Suwak dla zadań równoległych
+        self.workers_slider = ctk.CTkSlider(self.left_frame, from_=2, to=16,
+                                            number_of_steps=14, command=self.update_worker_label)
+        self.workers_slider.set(2)
+        self.workers_slider.pack(pady=10)
+        self.workers_slider.configure(state="disabled")  # Początkowo dezaktywowany
+        self.worker_label = ctk.CTkLabel(self.left_frame, text="Parallel tasks: 2")
+        self.worker_label.pack(pady=10)
+
+        self.column_frame = ctk.CTkFrame(self.center_frame)
+        self.column_frame.grid(row=2, column=0, columnspan=3, pady=10, padx=10, sticky="nswe")
+
+
+        ctk.CTkButton(self.left_frame, text="Run Parser", command=self.parse_button_clicked).pack(pady=20)
         # Scrollable Frame
         self.canvas = ctk.CTkCanvas(self.column_frame, width=200, height=200)
         self.scrollbar = ctk.CTkScrollbar(self.column_frame, orientation="vertical", command=self.canvas.yview)
@@ -226,6 +227,11 @@ class App:
             self.folder_entry.delete(0, tk.END)
             self.folder_entry.insert(0, folder_selected)
 
+    def parse_button_clicked(self):
+        new_thread = Thread(target=self.run_parser,
+                            daemon=True)
+        new_thread.start()
+
     def run_parser(self):
         self.base_folder = self.folder_entry.get()
         start_year = self.start_year_entry.get()
@@ -274,7 +280,7 @@ class App:
             self.status_label.configure(text="Parsing failed.", text_color="red")
             messagebox.showerror("Error", f"An error occurred: {e}")
 
-        self.update_plot_columns_list()
+        self.update_plot_columns_list_safe()
 
     def toggle_workers(self):
         mode = self.mode_var.get()
@@ -432,6 +438,10 @@ class App:
 
         plots = Plots()
         plots.plot(self.parsed_data, selected_columns, plot_type_var)
+
+    def update_plot_columns_list_safe(self):
+        if self.root:
+            self.root.after(0, self.update_plot_columns_list)
 
     def update_plot_columns_list(self):
         for widget in self.plot_column_scrollable_frame.winfo_children():
