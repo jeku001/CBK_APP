@@ -65,7 +65,7 @@ To run the application, follow these steps:
 1. **Download the application**
    - Download `win_app` or `linux_app`.
 2. **Run the executable**
-   - double-click `app.exe` located in win_app or `app` located in linux_app to launch the application.
+   - double-click `win_app.exe` located in win_app or `linux_app` located in linux_app to launch the application.
 
 3. **System Requirements**
    - At least 8GB of RAM (recommended for larger datasets).
@@ -111,6 +111,17 @@ To run the application, follow these steps:
    - **Linear**: Standard scale.
    - **Logarithmic**: For data with a wide range of values.
 4. View the interactive plot. Use the red cursor to inspect specific points or zoom it without losing quality.
+
+<h2 align="center">Plot Examples</h2>
+
+<p align="center">
+  <img src="images/example_plot.png" alt="Plot Example">
+</p>
+
+<p align="center">
+  <img src="images/example_plot_zoom.png" alt="Plot Example Zoomed">
+</p>
+
 
 ### Optional: Saving Parsed Data
 1. Click **Save Parsed File** to export the parsed data as a CSV file.
