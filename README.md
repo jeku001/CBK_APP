@@ -9,7 +9,8 @@
   - [Step 3: Running the Parser](#step-3-running-the-parser)
   - [Step 4: Plotting Data](#step-4-plotting-data)
   - [Optional: Saving Parsed Data](#optional-saving-parsed-data)
-- [Data Source and Structure](#data-source-and-structure)
+- [Source of Data](#source-of-data)
+- [Data Format](#data-format)
 - [Acknowledgements](#acknowledgements)
 
 ---
@@ -55,7 +56,7 @@ base_folder/
 Each file contains time-series data with columns such as:
 - `'Date (YYYY-MM-DD HH:MM:SS)`': Timestamp of the data.
 - `'Date (J2000 mseconds)`': Time in milliseconds since J2000 epoch.
-- Specific housekeeping parameters (e.g., temperatures, reset reasons).
+- Specific housekeeping parameters (e.g., temperatures, currents).
 
 ---
 
@@ -64,9 +65,8 @@ To run the application, follow these steps:
 
 1. **Download the application**
    - Download `win_app` or `linux_app`.
-
 2. **Run the executable**
-   - double-click `app.exe` located in win_app or `app` located in linux_app to launch the application.
+   - double-click `win_app.exe` located in win_app or `linux_app` located in linux_app to launch the application.
 
 3. **System Requirements**
    - At least 8GB of RAM (recommended for larger datasets).
@@ -74,6 +74,19 @@ To run the application, follow these steps:
 ---
 
 ## Using the Application
+<h2 align="center">Application Interface in Windows</h2>
+
+<p align="center">
+  <img src="images/windows_GUI.png" alt="Windows GUI">
+</p>
+
+<br> <!-- Mały odstęp -->
+
+<h2 align="center">Application Interface in Linux</h2>
+
+<p align="center">
+  <img src="images/linux_GUI.png" alt="Linux GUI">
+</p>
 
 ### Step 1: Loading Data
 1. Launch the application by running the executable file.
@@ -93,12 +106,22 @@ To run the application, follow these steps:
 3. Once completed, the parsed data will be ready for plotting or saving.
 
 ### Step 4: Plotting Data
-1. Click **Plot Data** to open the column selection window.
-2. Choose one or more columns to plot.
-3. Select a scale:
+1. Choose one or more columns to plot.
+2. Select a scale:
    - **Linear**: Standard scale.
    - **Logarithmic**: For data with a wide range of values.
-4. View the interactive plot. Use the red cursor to inspect specific points or zoom it without losing quality.
+3. View the interactive plot. Use the red cursor to inspect specific points or zoom it without losing quality.
+
+<h2 align="center">Plot Examples</h2>
+
+<p align="center">
+  <img src="images/example_plot.png" alt="Plot Example">
+</p>
+
+<p align="center">
+  <img src="images/example_plot_zoom.png" alt="Plot Example Zoomed">
+</p>
+
 
 ### Optional: Saving Parsed Data
 1. Click **Save Parsed File** to export the parsed data as a CSV file.
