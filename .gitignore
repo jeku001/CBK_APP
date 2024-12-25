@@ -5,11 +5,15 @@ UAM_BRITE/
 !linux_code/
 !win_code/
 .idea/
+build/
+dist/
+.spec
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
-
 # C extensions
 *.so
 
