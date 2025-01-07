@@ -16,7 +16,7 @@
 ---
 
 ## Overview
-This application is designed to help Scientists from the Polish Space Research Centre (CBK) efficiently process housekeeping datasets from the Lem and Heweliusz satellites. The primary goal is to enable the extraction and visualization of specific data columns from CSV files containing over 30GB of satellite telemetry data.
+This application is designed to help Scientists from the Polish Space Research Centre (CBK PAN) efficiently process housekeeping datasets from the Lem and Heweliusz satellites. The primary goal is to enable the extraction and visualization of specific data columns from CSV files containing over 30GB of satellite telemetry data.
 
 Key features include:
 - Parsing and filtering CSV data based on selected columns.
@@ -68,9 +68,12 @@ To run the application, follow these steps:
 2. **Run the executable**
    - double-click `win_app.exe` located in win_app or `linux_app` located in linux_app to launch the application.
 
-3. **System Requirements**
+3. **System requirements**
    - At least 8GB of RAM (recommended for larger datasets).
    - A quad-core processor (4 cores) or higher is recommended for efficient parallel processing.
+  
+4. **Security notice**
+   - Some anti-virus programs may block an application from an unknown source. If you receive a warning about a potential threat, please note that this project is fully open source — you are free to review the code yourself and confirm its safety. If you have any doubts, questions, or issues regarding the safety feel free to contact me.
 ---
 
 ## Using the Application
@@ -130,6 +133,6 @@ To run the application, follow these steps:
 ---
 
 ## Acknowledgements
-This tool was developed to simplify the analysis of satellite telemetry data. Special thanks to the teams behind LEM and HEWELIUSZ for providing invaluable satellite telemetry data.
+This tool was developed to simplify the analysis of satellite telemetry data. Special thanks to the teams behind LEM and HEWELIUSZ for providing necessary satellite telemetry data.
 
 For further inquiries or bug reports, please contact jedrzejslupski@gmail.com
