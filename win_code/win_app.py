@@ -8,15 +8,17 @@ import matplotlib
 from threading import Thread
 from win_tooltip import ToolTip
 import psutil
+import queue
+import gc
 matplotlib.use("TkAgg")
 
 
 class App:
-    def __init__(self, root):
-        ctk.set_appearance_mode("System")
+    def __init__(self, root_local):
+        ctk.set_appearance_mode("Light")
         ctk.set_default_color_theme("blue")
 
-        self.root = root
+        self.root = root_local
         self.root.title("Data Parser Application")
         self.root.geometry("800x600")
         self.parsed_data = None
@@ -33,6 +35,9 @@ class App:
         self.progress_var = tk.DoubleVar()
         self.end_year_entry = None
         self.start_year_entry = None
+        self.progress_var = tk.DoubleVar()
+        self.progress_queue = queue.Queue()
+        self.root.after(100, self.check_progress_queue)
         self.pattern_columns = {
             "0-Power Board": self.get_columns_0(),
             "1-BCDR0": self.get_columns_1(),
@@ -82,17 +87,7 @@ class App:
     def on_pattern_selected(self, value):
         self.file_pattern = self.pattern_combo.get()
         self.update_parse_columns()
-        # self.update_plot_columns_list()
         print(f"file pattern: {value}")
-
-    def update_progress_callback(self, processed_count, total_files):
-        try:
-            progress_percentage = processed_count / total_files
-            self.progress_var.set(progress_percentage)
-            self.progress_label.configure(text=f"Files processed: {processed_count}/{total_files}")
-            self.root.update_idletasks()
-        except Exception as e:
-            print(f"Error in progress callback: {e}")
 
     def browse_folder(self):
         parent_dir = os.path.dirname(os.getcwd())
@@ -102,22 +97,20 @@ class App:
             self.folder_entry.insert(0, folder_selected)
 
     def parse_button_clicked(self):
-        thread_name = "run_parser_thread_" + str(self.thread_number)
-        new_thread = Thread(target=self.run_parser,
-                            daemon=True, name=thread_name)
-        print(f"starting thread named {thread_name}")
-        self.thread_number += 1
-        new_thread.start()
-
-    def run_parser(self):
-        self.base_folder = self.folder_entry.get()
+        gc.collect()
+        base_folder = self.folder_entry.get()
         start_year = self.start_year_entry.get()
         end_year = self.end_year_entry.get()
-        if not self.base_folder:
-            messagebox.showerror("Error", "Please select a base folder")
+
+        if not base_folder:
+            import tkinter.messagebox
+            tkinter.messagebox.showerror("Error", "Please select a base folder")
             return
 
-        self.additional_columns = [col for col, var in self.parse_column_checkboxes.items() if var.get()]
+        additional_columns = [
+            col for col, var in self.parse_column_checkboxes.items()
+            if var.get()
+        ]
 
         mode = self.mode_var.get()
         if mode == "multi":
@@ -125,39 +118,93 @@ class App:
         else:
             workers = 1
 
-        try:
-            self.status_label.configure(text="", text_color="orange")  # Resetowanie statusu
-            self.root.update_idletasks()
+        thread_name = f"run_parser_thread_{self.thread_number}"
+        self.thread_number += 1
+        print(f"starting thread named {thread_name}")
 
-            # Logika parsowania danych
+        new_thread = Thread(
+            target=self.run_parser,
+            args=(base_folder, start_year, end_year, additional_columns, workers),
+            daemon=True,
+            name=thread_name
+        )
+        new_thread.start()
+
+    def run_parser(self, base_folder, start_year, end_year, additional_columns, workers):
+
+        self.progress_queue.put(("status_reset", ""))
+
+        try:
             parser = Parser(
-                self.base_folder,
-                self.additional_columns,
+                base_folder=base_folder,
+                additional_columns=additional_columns,
                 start_year=start_year if start_year else None,
                 end_year=end_year if end_year else None,
                 workers=workers
             )
-            self.parsed_data = parser.parse_data_no_merging(self.file_pattern,
-                                                            progress_callback=self.update_progress_callback)
+
+            parsed_data = parser.parse_data_no_merging(
+                file_pattern=self.file_pattern,
+                progress_callback=self.queue_progress_callback
+            )
+
+            self.parsed_data = parsed_data
 
             elapsed_time = parser.end_time - parser.start_time
             row_count = len(self.parsed_data)
 
-            # Ustawienie statusu na sukces
-            self.status_label.configure(
-                text=f"Time: {elapsed_time:.2f} sec. Rows: {row_count}",
-                text_color="green"
-            )
-            messagebox.showinfo("Success",
-                                "Data parsed successfully. You can now download the parsed file or plot the data.")
-            self.download_button.configure(state="normal")
+            success_text = f"Time: {elapsed_time:.2f} sec. Rows: {row_count}"
+            self.progress_queue.put(("success", success_text))
 
         except Exception as e:
-            # Wyświetl błąd, jeśli rzeczywiście wystąpił
-            self.status_label.configure(text="Parsing failed.", text_color="red")
-            messagebox.showerror("Error", f"An error occurred: {e}")
+            error_msg = f"An error occurred: {e}"
+            self.progress_queue.put(("error_exception", error_msg))
 
-        self.update_plot_columns_list_safe()
+        self.progress_queue.put(("parsing_finished", None))
+
+    def queue_progress_callback(self, processed_count, total_files):
+        self.progress_queue.put((processed_count, total_files))
+
+    def check_progress_queue(self):
+        try:
+            while True:
+                message = self.progress_queue.get_nowait()
+
+                if isinstance(message, tuple):
+                    # is it (processed_count, total_files)
+                    if len(message) == 2 and all(isinstance(x, int) for x in message):
+                        processed_count, total_files = message
+                        self.update_progress_callback(processed_count, total_files)
+
+                    elif len(message) == 2:
+                        msg_type, text = message
+
+                        if msg_type == "status_reset":
+                            self.status_label.configure(text="", text_color="orange")
+
+                        elif msg_type == "success":
+                            self.status_label.configure(text=text, text_color="green")
+                            messagebox.showinfo(
+                                "Success",
+                                "Data parsed successfully. You can now download the parsed file or plot the data."
+                            )
+                            self.download_button.configure(state="normal")
+
+                        elif msg_type == "error":
+                            self.status_label.configure(text="Parsing failed.", text_color="red")
+                            messagebox.showerror("Error", text)
+
+                        elif msg_type == "error_exception":
+                            self.status_label.configure(text="Parsing failed.", text_color="red")
+                            messagebox.showerror("Error", text)
+
+                        elif msg_type == "parsing_finished":
+                            self.update_plot_columns_list_safe()
+
+        except queue.Empty:
+            pass
+
+        self.root.after(100, self.check_progress_queue)
 
     def toggle_workers(self):
         mode = self.mode_var.get()
@@ -166,6 +213,11 @@ class App:
             self.workers_slider.configure(state="normal")
         else:
             self.workers_slider.configure(state="disabled")
+
+    def update_progress_callback(self, processed_count, total_files):
+        progress_percentage = processed_count / total_files
+        self.progress_var.set(progress_percentage)
+        self.progress_label.configure(text=f"Files processed: {processed_count}/{total_files}")
 
     def download_parsed_file(self):
         if self.parsed_data is not None and not self.parsed_data.empty:
@@ -177,12 +229,10 @@ class App:
             if output_file:
                 try:
 
-                    # self.status_label.config(text="Saving...", fg="orange")
                     self.root.update_idletasks()
 
                     self.parsed_data.to_csv(output_file, index=False)
 
-                    # self.status_label.config(text=f"File saved successfully: {output_file}", fg="green")
                     messagebox.showinfo("Success", f"File saved to: {output_file}")
                 except Exception as e:
                     self.status_label.configure(text="save failed.", text_color="red")
@@ -366,7 +416,7 @@ class App:
     def update_cpu_usage(self):
         cpu_usage = psutil.cpu_percent()
         self.cpu_label.configure(text=f"CPU usage: {cpu_usage}%")
-        self.root.after(1000, self.update_cpu_usage)  # Aktualizuj co 1000 ms (1 sekundę)
+        self.root.after(1000, self.update_cpu_usage)
 
     def terminate_app(self):
         self.root.destroy()
@@ -407,7 +457,7 @@ class App:
         self.scrollbar.pack(side="right", fill="y")
 
         self.cpu_label = ctk.CTkLabel(self.center_frame, text="CPU usage: 0%", font=("Arial", 10, "italic"))
-        self.cpu_label.grid(row=3, column=1, pady=10, sticky="w")  # Asumując, że status_label jest w column=0
+        self.cpu_label.grid(row=3, column=1, pady=10, sticky="w")
         self.update_cpu_usage()
 
         self.status_label = ctk.CTkLabel(self.center_frame, text="", text_color="blue", font=("Arial", 10, "italic"))
@@ -441,7 +491,6 @@ class App:
         self.end_year_entry = ctk.CTkEntry(self.left_frame, width=100)
         self.end_year_entry.pack(pady=(0, 5))
 
-        # MODE BUTTONS
         single_mode_container = ctk.CTkFrame(self.left_frame, fg_color="transparent")
         single_mode_container.pack(pady=10)
 
@@ -479,23 +528,23 @@ class App:
         self.workers_slider.pack(pady=10)
         self.workers_slider.configure(state="disabled")
 
-        worker_label_frame = ctk.CTkFrame(self.left_frame, fg_color="transparent")  # Przezroczyste tło
+        worker_label_frame = ctk.CTkFrame(self.left_frame, fg_color="transparent")
         worker_label_frame.pack(pady=(1, 10), fill="x")
 
         inner_frame = ctk.CTkFrame(worker_label_frame, fg_color="transparent")
         inner_frame.pack(anchor="center")
 
         self.worker_label = ctk.CTkLabel(inner_frame, text="Parallel tasks: 2")
-        self.worker_label.pack(side="left", padx=(0, 5))  # Odstęp po prawej stronie
+        self.worker_label.pack(side="left", padx=(0, 5))
 
         self.worker_tooltip_button = ctk.CTkButton(inner_frame, text="?", width=20, text_color="#141414",
                                                    fg_color="#edd7af", font=("Arial", 14, "bold"))
-        self.worker_tooltip_button.pack(side="left", padx=(5, 0))  # Odstęp po lewej stronie
+        self.worker_tooltip_button.pack(side="left", padx=(5, 0))
 
         self.create_tooltip(self.worker_tooltip_button,
                             f"Adjust the number of parallel tasks.\n"
                             f"This controls how many files are processed simultaneously.\n"
-                            f"Recommended: Up to the number of your CPU cores ({self.cpu_cores}).")
+                            f"Recommended: Half of your cpu cores ({int(self.cpu_cores/2)}).")
 
         ctk.CTkButton(self.left_frame, text="Run Parser", command=self.parse_button_clicked).pack(pady=20)
 
@@ -540,7 +589,6 @@ if __name__ == "__main__":
     import multiprocessing
 
     multiprocessing.freeze_support()
-    print(f"app starting")
     root = tk.Tk()
     app = App(root)
     root.mainloop()
