@@ -8,7 +8,7 @@ UAM_BRITE/
 build/
 dist/
 .spec
-
+notes.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
