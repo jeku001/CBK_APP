@@ -111,6 +111,7 @@ class App:
             col for col, var in self.parse_column_checkboxes.items()
             if var.get()
         ]
+        print(f"additional columns: {additional_columns}")
 
         mode = self.mode_var.get()
         if mode == "multi":
@@ -221,6 +222,7 @@ class App:
 
     def download_parsed_file(self):
         if self.parsed_data is not None and not self.parsed_data.empty:
+            #print(self.parsed_data)
             output_file = filedialog.asksaveasfilename(
                 defaultextension=".csv",
                 filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
@@ -303,7 +305,7 @@ class App:
     @staticmethod
     def get_columns_6():
         return ["'EulerAngleErrors Data[0]", "'EulerAngleErrors Data[1]", "'EulerAngleErrors Data[2]",
-                "'EulerAngleErrors Length", "'Mode In", "'Mode In", "'Mode Out", "'Mode Out", "'StateVector Data[0]",
+                "'EulerAngleErrors Length", "'Mode In", "'Mode Out", "'StateVector Data[0]",
                 "'StateVector Data[1]", "'StateVector Data[2]", "'StateVector Data[3]", "'StateVector Data[4]",
                 "'StateVector Data[5]", "'StateVector Data[6]", "'StateVector Length", "'Chosen FSS",
                 "'Current FFS Data[0]", "'Current FFS Data[1]", "'Current FFS Data[2]", "'Current FFS Data[3]",

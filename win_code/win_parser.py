@@ -18,8 +18,31 @@ class Parser:
     @staticmethod
     def parse_single_file(file_path, required_columns):
         try:
-            df = pd.read_csv(file_path, encoding="iso-8859-1", usecols=required_columns)
+            df = pd.read_csv(file_path, encoding="iso-8859-1", usecols=required_columns, sep=",")
             return df
+        except Exception as e:
+            print(f"{threading.current_thread()}: Error processing file {file_path}: {e}")
+            return pd.DataFrame(columns=required_columns)
+
+    @staticmethod
+    def parse_single_file_with_duplicates(file_path, required_columns):
+        """
+        The file '6-ACS' contains duplicate column names, causing an exception.
+        """
+        try:
+            df_all = pd.read_csv(file_path, encoding="iso-8859-1", sep=",")
+
+            final_cols = []
+            for col in df_all.columns:
+                if col in required_columns:
+                    final_cols.append(col)
+                elif col.endswith(".1"): # duplicate ends with .1
+                    base_col = col.split('.')[0]  # "B.1" -> "B"
+                    if base_col in required_columns:
+                        final_cols.append(col)
+
+            return df_all[final_cols]
+
         except Exception as e:
             print(f"{threading.current_thread()}: Error processing file {file_path}: {e}")
             return pd.DataFrame(columns=required_columns)
@@ -31,6 +54,14 @@ class Parser:
                                "'Date Millisecond Offset",
                                "'Date (J2000 mseconds)"
                            ] + self.additional_columns
+
+        # (ZMIANA #1) Sprawdzamy, czy w additional_columns występuje "Mode In" lub "Mode Out".
+        use_duplicates_parser = ("'Mode In") or ("'Mode Out" in self.additional_columns)
+
+        # (ZMIANA #2) W zależności od tego wyboru – ustawiamy odpowiednią funkcję parsującą.
+        # parse_single_file_with_duplicates -> obsłuży plik z duplikatami kolumn.
+        # parse_single_file -> dotychczasowa standardowa metoda parsowania.
+        parse_func = self.parse_single_file_with_duplicates if use_duplicates_parser else self.parse_single_file
 
         if self.start_year is not None:
             self.start_year = int(self.start_year)
@@ -53,6 +84,7 @@ class Parser:
                 if file_pattern in file and file.endswith(".csv"):
                     file_path = os.path.join(root, file)
                     files_to_process.append(file_path)
+
         total_files = len(files_to_process)
         update_frequency = 50
         processed_count = 0
@@ -62,7 +94,6 @@ class Parser:
         print(f"{threading.current_thread()}: Found {len(files_to_process)} files to process.")
 
         data_list = []
-        total_files = len(files_to_process)
 
         if self.workers > 1:
             if total_files < 1000:
@@ -77,7 +108,7 @@ class Parser:
             processed_count = 0
             with executor_class(max_workers=self.workers) as executor:
                 results = executor.map(
-                    self.parse_single_file,
+                    parse_func,
                     files_to_process,
                     [required_columns] * total_files
                 )
@@ -95,7 +126,7 @@ class Parser:
             print("{threading.current_thread()}: Using single-threaded parsing...")
             processed_count = 0
             for fpath in files_to_process:
-                res_df = self.parse_single_file(fpath, required_columns)
+                res_df = parse_func(fpath, required_columns)
                 if not res_df.empty:
                     data_list.append(res_df)
                 processed_count += 1
@@ -109,6 +140,7 @@ class Parser:
             long_df = pd.concat(data_list, ignore_index=True)
         else:
             long_df = pd.DataFrame(columns=required_columns)
+
         self.end_time = time.time()
         long_df = long_df.sort_values(by=["'Date (J2000 mseconds)"], ascending=True)
         if "'Date (YYYY-MM-DD HH:MM:SS)" in long_df.columns:
@@ -118,3 +150,4 @@ class Parser:
         print(f"{threading.current_thread()}: Processing completed in {total_duration:.2f} seconds")
 
         return long_df
+
