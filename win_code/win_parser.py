@@ -54,7 +54,7 @@ class Parser:
                                "'Date Millisecond Offset",
                                "'Date (J2000 mseconds)"
                            ] + self.additional_columns
-a        use_duplicates_parser = ("'Mode In") or ("'Mode Out" in self.additional_columns)
+        use_duplicates_parser = ("'Mode In") or ("'Mode Out" in self.additional_columns)
 
         parse_func = self.parse_single_file_with_duplicates if use_duplicates_parser else self.parse_single_file
 
