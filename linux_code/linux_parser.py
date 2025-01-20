@@ -16,7 +16,7 @@ class Parser:
     @staticmethod
     def parse_single_file(file_path, required_columns):
         try:
-            df = pd.read_csv(file_path, encoding="iso-8859-1")
+            df = pd.read_csv(file_path, encoding="iso-8859-1", usecols=required_columns, sep=",")
             if not all(col in df.columns for col in required_columns):
                 return pd.DataFrame(columns=required_columns)
             selected_data = df[required_columns]
