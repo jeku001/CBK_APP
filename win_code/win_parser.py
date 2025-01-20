@@ -54,13 +54,8 @@ class Parser:
                                "'Date Millisecond Offset",
                                "'Date (J2000 mseconds)"
                            ] + self.additional_columns
+a        use_duplicates_parser = ("'Mode In") or ("'Mode Out" in self.additional_columns)
 
-        # (ZMIANA #1) Sprawdzamy, czy w additional_columns występuje "Mode In" lub "Mode Out".
-        use_duplicates_parser = ("'Mode In") or ("'Mode Out" in self.additional_columns)
-
-        # (ZMIANA #2) W zależności od tego wyboru – ustawiamy odpowiednią funkcję parsującą.
-        # parse_single_file_with_duplicates -> obsłuży plik z duplikatami kolumn.
-        # parse_single_file -> dotychczasowa standardowa metoda parsowania.
         parse_func = self.parse_single_file_with_duplicates if use_duplicates_parser else self.parse_single_file
 
         if self.start_year is not None:
