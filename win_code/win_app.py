@@ -29,7 +29,7 @@ class App:
         self.parse_column_checkboxes = {}
         self.plot_column_checkboxes = {}
         self.plot_scale_var = tk.StringVar(value="linear")
-        self.plot_type_var = tk.StringVar(value="Line")
+        self.plot_type_var = tk.StringVar(value="line")
         self.mode_var = tk.StringVar(value="single")
         self.thread_number = 0
         self.cpu_cores = os.cpu_count()
