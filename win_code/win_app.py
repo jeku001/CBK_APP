@@ -354,19 +354,6 @@ class App:
                 "'Controller I Gain File", "'Controller D Gain File", "'Controller I Max File",
                 "'Controller Max DT File", "'Controller SetPoint File", "'Controller I State File"]
 
-    def confirm_and_plot(self, window, column_listbox, plot_type_var):
-        selected_indices = column_listbox.curselection()
-        selected_columns = [column_listbox.get(i) for i in selected_indices]
-
-        if not selected_columns:
-            messagebox.showerror("Error", "No columns selected for plotting.")
-            return
-
-        window.destroy()
-
-        plots = Plots()
-        plots.plot(self.parsed_data, selected_columns, plot_type_var)
-
     def update_plot_columns_list_safe(self):
         if self.root:
             self.root.after(0, self.update_plot_columns_list)
