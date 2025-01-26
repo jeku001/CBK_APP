@@ -20,7 +20,7 @@ class App:
 
         self.root = root_local
         self.root.title("Data Parser Application")
-        self.root.geometry("800x600")
+        self.root.geometry("800x650")
         self.parsed_data = None
         self.base_folder = None
         self.file_pattern = "0-Power Board"
@@ -28,7 +28,8 @@ class App:
         self.last_selected_pattern = "0-Power Board"
         self.parse_column_checkboxes = {}
         self.plot_column_checkboxes = {}
-        self.plot_type_var = tk.StringVar(value="linear")
+        self.plot_scale_var = tk.StringVar(value="linear")
+        self.plot_type_var = tk.StringVar(value="Line")
         self.mode_var = tk.StringVar(value="single")
         self.thread_number = 0
         self.cpu_cores = os.cpu_count()
@@ -222,7 +223,7 @@ class App:
 
     def download_parsed_file(self):
         if self.parsed_data is not None and not self.parsed_data.empty:
-            #print(self.parsed_data)
+            # print(self.parsed_data)
             output_file = filedialog.asksaveasfilename(
                 defaultextension=".csv",
                 filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
@@ -389,31 +390,54 @@ class App:
             return
 
         plot_type_var = self.plot_type_var.get()
+        plot_scale_var = self.plot_scale_var.get()
+
         plots = Plots()
-        plots.plot(self.parsed_data, selected_columns, plot_type_var)
+        plots.plot(self.parsed_data, selected_columns, plot_type_var, plot_scale_var)
+
+    def plot_scale_changed(self):
+        current_plot_scale = self.plot_scale_var.get()
+        print(f"Plot type changed to: {current_plot_scale}")
 
     def plot_type_changed(self):
         current_plot_type = self.plot_type_var.get()
         print(f"Plot type changed to: {current_plot_type}")
 
     def setup_plot_options(self):
-        plot_options_frame = ctk.CTkFrame(self.right_frame)
-        plot_options_frame.pack(pady=10, fill='x', expand=False)
+        plot_type_frame = ctk.CTkFrame(self.right_frame)
+        plot_type_frame.pack(pady=10, fill='x', expand=False)
 
-        plot_options_label = ctk.CTkLabel(plot_options_frame, text="Plot Type Options", font=("Arial", 12, "bold"))
+        plot_scale_frame = ctk.CTkFrame(self.right_frame)
+        plot_scale_frame.pack(pady=10, fill='x', expand=False)
+
+        plot_options_label = ctk.CTkLabel(plot_type_frame, text="Plot Type Options", font=("Arial", 12, "bold"))
         plot_options_label.pack(pady=(10, 5))
 
-        linear_button = ctk.CTkRadioButton(plot_options_frame, text="Linear", variable=self.plot_type_var,
-                                           value="linear", command=self.plot_type_changed)
-        linear_button.pack(side="left", padx=15, pady=10)
+        plot_type_button_line = ctk.CTkRadioButton(plot_type_frame, text="Line", variable=self.plot_type_var,
+                                                   value="line", command=self.plot_type_changed)
+        plot_type_button_line.pack(side="left", padx=15, pady=5)
 
-        logarithmic_button = ctk.CTkRadioButton(plot_options_frame, text="Logarithmic",
-                                                variable=self.plot_type_var, value="logarithmic",
-                                                command=self.plot_type_changed)
-        logarithmic_button.pack(side="left", padx=0, pady=10)
+        plot_type_button_scatter = ctk.CTkRadioButton(plot_type_frame, text="Scatter", variable=self.plot_type_var,
+                                                      value="scatter", command=self.plot_type_changed)
+        plot_type_button_scatter.pack(side="right", padx=0, pady=5)
 
-        plot_options_frame.configure(fg_color="transparent")
-        plot_options_frame.configure(bg_color="transparent")
+        plot_scale_label = ctk.CTkLabel(plot_scale_frame, text="Plot scale options", font=("Arial", 12, "bold"))
+        plot_scale_label.pack(pady=(10, 5))
+
+        plot_scale_button_linear = ctk.CTkRadioButton(plot_scale_frame, text="Linear", variable=self.plot_scale_var,
+                                                      value="linear", command=self.plot_scale_changed)
+        plot_scale_button_linear.pack(side="left", padx=15, pady=5)
+
+        plot_scale_button_logarithmic = ctk.CTkRadioButton(plot_scale_frame, variable=self.plot_scale_var,
+                                                           text="Logarithmic", value="logarithmic",
+                                                           command=self.plot_scale_changed)
+        plot_scale_button_logarithmic.pack(side="left", padx=0, pady=5)
+
+        plot_type_frame.configure(fg_color="transparent")
+        plot_type_frame.configure(bg_color="transparent")
+
+        plot_scale_frame.configure(fg_color="transparent")
+        plot_scale_frame.configure(bg_color="transparent")
 
     def update_cpu_usage(self):
         cpu_usage = psutil.cpu_percent()

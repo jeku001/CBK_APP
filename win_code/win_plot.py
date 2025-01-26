@@ -6,7 +6,8 @@ class Plots:
         pass
 
     @staticmethod
-    def plot(df, selected_columns=None, plot_type_var="linear"):
+    def plot(df, selected_columns=None, plot_type_var="Line", plot_scale_var="linear"):
+        x = df[df.columns[0]]
         all_columns = df.columns[3:]
         columns_to_plot = selected_columns if selected_columns else all_columns
 
@@ -14,12 +15,19 @@ class Plots:
             if column in df.columns:
                 plt.figure(figsize=(12, 6))
 
-                if plot_type_var == "logarithmic":
-                    plt.plot(df[df.columns[0]], df[column], label=column)
+                y = df[column]
+
+                if plot_type_var == "line":
+                    plt.plot(x, y, label=column)
+                elif plot_type_var == "scatter":
+                    plt.scatter(x, y, s=1, label=column)
+                else:
+                    print("debug: plot type not in (line, scatter")
+
+                if plot_scale_var == "logarithmic":
                     plt.yscale("log")
                     plt.title(f'Logarithmic scale: {column}')
                 else:
-                    plt.plot(df[df.columns[0]], df[column], label=column)
                     plt.title(f'Linear scale: {column}')
 
                 plt.xlabel('Time')
@@ -27,6 +35,4 @@ class Plots:
                 plt.legend(loc="upper right")
                 plt.grid(True)
 
-                # cursor = Cursor(plt.gca(), useblit=True, color='red', linewidth=1)
-                # plt.savefig("wykres.pdf", format="pdf")
                 plt.show()
