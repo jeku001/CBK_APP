@@ -126,12 +126,20 @@ class App:
         self.status_label = tk.Label(root, text="", fg="blue", font=("Arial", 10, "italic"))
         self.status_label.grid(row=9, column=0, columnspan=2, pady=20, sticky="n")
 
-        self.plot_type = tk.StringVar(value="linear")  # Domyślnie "linear"
-        linear_button = tk.Radiobutton(root, text="Linear", variable=self.plot_type, value="linear")
-        linear_button.grid(row=10, column=1, padx=(140,0), pady=5, sticky="e")  # Zwiększony padx
+        self.plot_scale_var = tk.StringVar(value="linear")
+        linear_button = tk.Radiobutton(root, text="Linear", variable=self.plot_scale_var, value="linear")
+        linear_button.grid(row=10, column=1, padx=(140,0), pady=5, sticky="e")
 
-        log_button = tk.Radiobutton(root, text="Logarithmic", variable=self.plot_type, value="log")
-        log_button.grid(row=10, column=2, padx=(40,10), pady=5, sticky="w")  # Zwiększony padx
+        log_button = tk.Radiobutton(root, text="Logarithmic", variable=self.plot_scale_var, value="log")
+        log_button.grid(row=10, column=2, padx=(40,10), pady=5, sticky="w")
+
+
+        self.plot_type_var = tk.StringVar(value="line")
+        linear_button = tk.Radiobutton(root, text="Line", variable=self.plot_type_var, value="line")
+        linear_button.grid(row=11, column=1, padx=(140,0), pady=5, sticky="e")
+
+        log_button = tk.Radiobutton(root, text="Scatter", variable=self.plot_type_var, value="scatter")
+        log_button.grid(row=11, column=2, padx=(40,10), pady=5, sticky="w")
 
         tk.Label(root,
                  text="You can select different columns for parsing and plotting without restarting the application."
@@ -311,7 +319,7 @@ class App:
     def get_columns_9(self):
         return ["'Reset Count File","'Reset Reason File","'Comm Err Count File","'Scrub Index File","'SEU Count File","'Init Pointer File","'Ping Pointer File","'ADC Raw1 File","'ADC Raw2 File","'ADC Raw3 File","'ADC Raw4 File","'PWM Setting File","'PWM Period File","'PWM Controller Pointer File","'PWM Controller Cycle File","'PWM DCycle1 File","'PWM DCycle2 File","'PWM DCycle3 File","'PWM DCycle4 File","'Converted Temp1 File(°C)","'Converted Temp2 File(°C)","'Converted Temp3 File(°C)","'Converted Temp4 File(°C)","'Controller P Gain File","'Controller I Gain File","'Controller D Gain File","'Controller I Max File","'Controller Max DT File","'Controller SetPoint File","'Controller I State File"]
 
-    def confirm_and_plot(self, window, column_listbox, plot_type):
+    def confirm_and_plot(self, window, column_listbox, plot_type, plot_scale):
         selected_indices = column_listbox.curselection()
         selected_columns = [column_listbox.get(i) for i in selected_indices]
 
@@ -322,14 +330,16 @@ class App:
         window.destroy()
 
         plots = Plots()
-        plots.plot(self.parsed_data, selected_columns, plot_type)
+        plots.plot(self.parsed_data, selected_columns, plot_type, plot_scale)
 
     def plot_data(self):
         if self.parsed_data is None or self.parsed_data.empty:
             messagebox.showerror("Error", "No data to plot. Please run the parser first.")
             return
 
-        plot_type = self.plot_type.get()
+        plot_type = self.plot_type_var.get()
+        plot_scale = self.plot_scale_var.get()
+
 
         plot_window = tk.Toplevel(self.root)
         plot_window.title("Select Columns to Plot")
@@ -344,7 +354,7 @@ class App:
             column_listbox.insert(tk.END, col)
 
         tk.Button(plot_window, text="Plot Selected",
-                  command=lambda: self.confirm_and_plot(plot_window, column_listbox, plot_type)).pack(pady=5)
+                  command=lambda: self.confirm_and_plot(plot_window, column_listbox, plot_type, plot_scale)).pack(pady=5)
 
     def download_plot(self, window):
         plt.savefig("plot_output.pdf", format="pdf")
