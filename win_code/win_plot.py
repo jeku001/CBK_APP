@@ -18,7 +18,7 @@ class Plots:
                 y = df[column]
 
                 if plot_type_var == "line":
-                    plt.plot(x, y, label=column, linewidth=1.0)
+                    plt.plot(x, y, label=column, linewidth=0.5)
                 elif plot_type_var == "scatter":
                     plt.scatter(x, y, s=1, label=column)
                 else:
@@ -41,11 +41,11 @@ class Plots:
     def plot_two_cols(df1, column1, df2, column2, plot_type="line", log_scale=False, show=False):
         plt.figure(figsize=(10, 6))
         if plot_type == "line":
-            plt.plot(df1[df1.columns[0]], df1[column1], label=f'{column1} (DF1)', color='blue', linewidth=1.0)
-            plt.plot(df2[df2.columns[0]], df2[column2], label=f'{column2} (DF2)', color='orange', linewidth=1.0)
+            plt.plot(df1[df1.columns[0]], df1[column1], label=f'{column1} (DF1)', color='blue', linewidth=0.2)
+            plt.plot(df2[df2.columns[0]], df2[column2], label=f'{column2} (DF2)', color='orange', linewidth=0.2)
         elif plot_type == "scatter":
-            plt.scatter(df1[df1.columns[0]], df1[column1], label=f'{column1} (DF1)', color='blue', s=1)
-            plt.scatter(df2[df2.columns[0]], df2[column2], label=f'{column2} (DF2)', color='orange', s=1)
+            plt.scatter(df1[df1.columns[0]], df1[column1], label=f'{column1} (DF1)', color='blue', s=0.5)
+            plt.scatter(df2[df2.columns[0]], df2[column2], label=f'{column2} (DF2)', color='orange', s=0.5)
 
         if log_scale:
             plt.yscale('log')
