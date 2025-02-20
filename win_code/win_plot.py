@@ -18,7 +18,7 @@ class Plots:
                 y = df[column]
 
                 if plot_type_var == "line":
-                    plt.plot(x, y, label=column)
+                    plt.plot(x, y, label=column, linewidth=1.0)
                 elif plot_type_var == "scatter":
                     plt.scatter(x, y, s=1, label=column)
                 else:
@@ -38,10 +38,15 @@ class Plots:
                 plt.show()
 
     @staticmethod
-    def plot_two_cols(df1, column1, df2, column2, log_scale=False, show=False):
+    def plot_two_cols(df1, column1, df2, column2, plot_type="line", log_scale=False, show=False):
         plt.figure(figsize=(10, 6))
-        plt.plot(df1[df1.columns[0]], df1[column1], label=f'{column1} (DF1)', color='blue')
-        plt.plot(df2[df2.columns[0]], df2[column2], label=f'{column2} (DF2)', color='orange')
+        if plot_type == "line":
+            plt.plot(df1[df1.columns[0]], df1[column1], label=f'{column1} (DF1)', color='blue', linewidth=1.0)
+            plt.plot(df2[df2.columns[0]], df2[column2], label=f'{column2} (DF2)', color='orange', linewidth=1.0)
+        elif plot_type == "scatter":
+            plt.scatter(df1[df1.columns[0]], df1[column1], label=f'{column1} (DF1)', color='blue', s=1)
+            plt.scatter(df2[df2.columns[0]], df2[column2], label=f'{column2} (DF2)', color='orange', s=1)
+
         if log_scale:
             plt.yscale('log')
             plt.title(f'Logarithmic Scale Plot: {column1} & {column2}')
@@ -54,5 +59,4 @@ class Plots:
         if show:
             plt.show()
         return plt
-
 
