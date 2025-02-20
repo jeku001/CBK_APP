@@ -644,7 +644,6 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
         self.build_right_panel()
 
     def build_left_panel(self):
-        # Główny kontener w lewym panelu
         container = ctk.CTkFrame(self.left_panel, fg_color="transparent", bg_color="transparent")
         container.pack(fill="both", expand=True)
 
@@ -656,7 +655,6 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
             bg_color="transparent"
         ).pack(pady=10)
 
-        # Górna część: scrollowana lista z ID i przyciskiem usuwania
         self.scrollable_left = ctk.CTkScrollableFrame(
             container,
             height=300,
@@ -692,7 +690,6 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
                 "remove_button": remove_button
             }
 
-        # Dolna część: lista kolumn wybranego DF
         self.columns_frame = ctk.CTkFrame(container, fg_color="transparent", bg_color="transparent")
         self.columns_frame.pack(side="bottom", fill="x", pady=10)
 
@@ -713,13 +710,9 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
         self.columns_scrollable.pack(fill="x", expand=True, padx=5, pady=5)
 
     def select_dataframe(self, df_id):
-        """Wywoływane po kliknięciu przycisku ID.
-           Czyści i aktualizuje listę kolumn w dolnej części lewego panelu."""
-        # Czyścimy istniejące widgety w scrollowanej liście kolumn
         for widget in self.columns_scrollable.winfo_children():
             widget.destroy()
 
-        # Pobieramy kolumny z wybranego DF
         columns = self.all_parsed_data_dict.get(df_id, {}).get("list_of_columns", [])
         for col in columns:
             ctk.CTkLabel(
@@ -756,17 +749,14 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
         self.df_select_2.configure(values=self.df_ids)
 
     def build_center_panel(self):
-        # Kontener dla Dataframes Selection i RAM Usage
         container = ctk.CTkFrame(self.center_panel, fg_color="transparent", bg_color="transparent")
         container.pack(fill="both", expand=True)
 
-        # Sekcja wyboru Dataframes
         selection_container = ctk.CTkFrame(container, fg_color="transparent", bg_color="transparent")
         selection_container.pack(fill="x", pady=10)
         ctk.CTkLabel(selection_container, text="Dataframes Selection", font=("Arial", 16, "bold"),
                      fg_color="transparent", bg_color="transparent").pack(pady=5)
 
-        # Pierwszy wiersz wyboru (DF1)
         self.selection_frame1 = ctk.CTkFrame(selection_container, fg_color="transparent", bg_color="transparent")
         self.selection_frame1.pack(fill="x", padx=5, pady=5)
         self.df_ids = [str(k) for k in self.all_parsed_data_dict.keys()]
@@ -786,7 +776,6 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
         if columns1:
             self.col_select_1.set(columns1[0])
 
-        # Drugi wiersz wyboru (DF2)
         self.selection_frame2 = ctk.CTkFrame(selection_container, fg_color="transparent", bg_color="transparent")
         self.selection_frame2.pack(fill="x", padx=5, pady=5)
         self.df_select_2 = ctk.CTkOptionMenu(self.selection_frame2, values=self.df_ids,
@@ -803,7 +792,7 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
         if columns2:
             self.col_select_2.set(columns2[0])
 
-        # Sekcja RAM Usage
+        # RAM Usage
         ram_container = ctk.CTkFrame(container, fg_color="transparent", bg_color="transparent")
         ram_container.pack(fill="x", pady=10, side="bottom")
         self.ram_frame = ctk.CTkFrame(self.center_panel, fg_color="transparent", bg_color="transparent")
@@ -847,7 +836,6 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
         container = ctk.CTkFrame(self.right_panel, fg_color="transparent", bg_color="transparent")
         container.pack(fill="both", expand=True)
 
-        # Sekcja: Plot Options (Typ wykresu)
         options_container = ctk.CTkFrame(container, fg_color="transparent", bg_color="transparent")
         options_container.pack(pady=5)
 
@@ -865,7 +853,6 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
         plot_type_button_scatter.pack(side="left", padx=15, pady=5)
         plot_type_frame.configure(fg_color="transparent", bg_color="transparent")
 
-        # Sekcja: Plot Scale Options (Skala wykresu)
         plot_scale_frame = ctk.CTkFrame(options_container, fg_color="transparent", bg_color="transparent")
         plot_scale_frame.pack(pady=5)
         plot_scale_label = ctk.CTkLabel(plot_scale_frame, text="Plot scale options", font=("Arial", 12, "bold"),
@@ -881,13 +868,11 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
         plot_scale_button_logarithmic.pack(side="left", padx=15, pady=5)
         plot_scale_frame.configure(fg_color="transparent", bg_color="transparent")
 
-        # Sekcja: Add Solar Data Checkbox
         solar_container = ctk.CTkFrame(options_container, fg_color="transparent", bg_color="transparent")
         solar_container.pack(pady=5)
         solar_checkbox = ctk.CTkCheckBox(solar_container, text="Add Solar Data", variable=self.add_solar_var)
         solar_checkbox.pack(pady=(10, 5))
 
-        # Sekcja: Action Panel
         action_container = ctk.CTkFrame(container, fg_color="transparent", bg_color="transparent")
         action_container.pack(pady=5, fill="both", expand=True)
         ctk.CTkLabel(action_container, text="Action Panel", font=("Arial", 16, "bold"),
@@ -896,7 +881,6 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
                                               command=self.generate_comparision_plot)
         self.comp_plot_button.pack(padx=5, pady=5)
 
-        # Dolny obszar: przyciski Refresh i Exit (ułożone pionowo, Refresh nad Exit)
         bottom_frame = ctk.CTkFrame(container, fg_color="transparent", bg_color="transparent")
         bottom_frame.pack(side="bottom", fill="x", padx=5, pady=5)
         self.refresh_button = ctk.CTkButton(bottom_frame, text="Refresh", fg_color="green",
@@ -906,11 +890,9 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
         self.exit_button.pack(side="top", padx=5, pady=5)
 
     def plot_type_changed(self):
-        # Możesz dodać dodatkową logikę przy zmianie typu wykresu
         pass
 
     def plot_scale_changed(self):
-        # Możesz dodać dodatkową logikę przy zmianie skali wykresu
         pass
 
     def refresh_window(self):
@@ -935,7 +917,6 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
         if df1 is None or df2 is None:
             print("None")
             return
-        # Pobierz ustawienia wykresu
         plot_type = self.plot_type_var.get()
         log_scale = True if self.plot_scale_var.get() == "logarithmic" else False
         Plots.plot_two_cols(df1, col1, df2, col2, plot_type=plot_type, log_scale=log_scale, add_sunspot=self.add_solar_var, show=True)
