@@ -642,44 +642,90 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
         self.build_right_panel()
 
     def build_left_panel(self):
-        # Kontener dla Parsed Dataframes
+        # Główny kontener w lewym panelu
         container = ctk.CTkFrame(self.left_panel, fg_color="transparent", bg_color="transparent")
         container.pack(fill="both", expand=True)
-        ctk.CTkLabel(container, text="Parsed Dataframes", font=("Arial", 16, "bold"),
-                     fg_color="transparent", bg_color="transparent").pack(pady=10)
 
-        self.scrollable_left = ctk.CTkScrollableFrame(container, height=400,
-                                                      fg_color="transparent", bg_color="transparent")
-        self.scrollable_left.pack(fill="both", expand=True)
+        ctk.CTkLabel(
+            container,
+            text="Parsed Dataframes",
+            font=("Arial", 16, "bold"),
+            fg_color="transparent",
+            bg_color="transparent"
+        ).pack(pady=10)
+
+        # Górna część: scrollowana lista z ID i przyciskiem usuwania
+        self.scrollable_left = ctk.CTkScrollableFrame(
+            container,
+            height=300,
+            fg_color="transparent",
+            bg_color="transparent"
+        )
+        self.scrollable_left.pack(fill="both", expand=True, padx=5, pady=5)
 
         self.left_items = {}
         for df_id, df_info in self.all_parsed_data_dict.items():
             item_frame = ctk.CTkFrame(self.scrollable_left, fg_color="transparent", bg_color="transparent")
-            item_frame.pack(fill="x", pady=5, padx=5)
+            item_frame.pack(fill="x", pady=5)
 
-            toggle_button = ctk.CTkButton(item_frame, text=f"ID: {df_id}",
-                                          command=lambda id=df_id: self.toggle_columns(id))
-            toggle_button.pack(side="left", padx=5)
+            # Węższy przycisk ID
+            id_button = ctk.CTkButton(
+                item_frame,
+                text=f"{df_id}",
+                width=40,  # ustalamy szerokość
+                command=lambda i=df_id: self.select_dataframe(i)
+            )
+            id_button.pack(side="left", padx=5)
 
-            remove_button = ctk.CTkButton(item_frame, text="Usuń", fg_color="red",
-                                          command=lambda id=df_id: self.remove_dataframe(id))
+            remove_button = ctk.CTkButton(
+                item_frame,
+                text="Usuń",
+                fg_color="red",
+                command=lambda i=df_id: self.remove_dataframe(i)
+            )
             remove_button.pack(side="right", padx=5)
 
-            col_frame = ctk.CTkFrame(self.scrollable_left, fg_color="transparent", bg_color="transparent")
-            col_frame.pack(fill="x", padx=20)
-            col_frame.pack_forget()  # Początkowo ukryta
-
-            columns = df_info.get("list_of_columns", [])
-            col_label = ctk.CTkLabel(col_frame, text=", ".join(columns),
-                                     fg_color="transparent", bg_color="transparent")
-            col_label.pack(side="left")
-
             self.left_items[df_id] = {
-                "toggle_button": toggle_button,
-                "remove_button": remove_button,
-                "col_frame": col_frame,
-                "col_label": col_label
+                "id_button": id_button,
+                "remove_button": remove_button
             }
+
+        # Dolna część: lista kolumn wybranego DF
+        self.columns_frame = ctk.CTkFrame(container, fg_color="transparent", bg_color="transparent")
+        self.columns_frame.pack(side="bottom", fill="x", pady=10)
+
+        ctk.CTkLabel(
+            self.columns_frame,
+            text="Parsed columns in selected DF",
+            font=("Arial", 12, "bold"),
+            fg_color="transparent",
+            bg_color="transparent"
+        ).pack(pady=5)
+
+        self.columns_scrollable = ctk.CTkScrollableFrame(
+            self.columns_frame,
+            fg_color="transparent",
+            bg_color="transparent",
+            height=100
+        )
+        self.columns_scrollable.pack(fill="x", expand=True, padx=5, pady=5)
+
+    def select_dataframe(self, df_id):
+        """Wywoływane po kliknięciu przycisku ID.
+           Czyści i aktualizuje listę kolumn w dolnej części lewego panelu."""
+        # Czyścimy istniejące widgety w scrollowanej liście kolumn
+        for widget in self.columns_scrollable.winfo_children():
+            widget.destroy()
+
+        # Pobieramy kolumny z wybranego DF
+        columns = self.all_parsed_data_dict.get(df_id, {}).get("list_of_columns", [])
+        for col in columns:
+            ctk.CTkLabel(
+                self.columns_scrollable,
+                text=col,
+                fg_color="transparent",
+                bg_color="transparent"
+            ).pack(anchor="w", padx=5, pady=2)
 
     def toggle_columns(self, df_id):
         item = self.left_items.get(df_id)
