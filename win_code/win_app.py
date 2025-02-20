@@ -620,6 +620,8 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
         self.title("Advanced Plots")
         self.geometry("800x600")
 
+        self.add_solar_var = ctk.BooleanVar(value=False)
+
         # Ustawiamy grid na trzy kolumny: lewy, centralny, prawy
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
@@ -842,15 +844,13 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
         self.after(1000, self.update_ram_usage)
 
     def build_right_panel(self):
-        # Kontener dla opcji wykresu i akcji
         container = ctk.CTkFrame(self.right_panel, fg_color="transparent", bg_color="transparent")
         container.pack(fill="both", expand=True)
 
-        # Sekcja Plot Options
+        # Sekcja: Plot Options (Typ wykresu)
         options_container = ctk.CTkFrame(container, fg_color="transparent", bg_color="transparent")
         options_container.pack(pady=5)
 
-        # Opcje typu wykresu
         plot_type_frame = ctk.CTkFrame(options_container, fg_color="transparent", bg_color="transparent")
         plot_type_frame.pack(pady=5)
         plot_type_label = ctk.CTkLabel(plot_type_frame, text="Plot options", font=("Arial", 12, "bold"),
@@ -865,7 +865,7 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
         plot_type_button_scatter.pack(side="left", padx=15, pady=5)
         plot_type_frame.configure(fg_color="transparent", bg_color="transparent")
 
-        # Opcje skali wykresu
+        # Sekcja: Plot Scale Options (Skala wykresu)
         plot_scale_frame = ctk.CTkFrame(options_container, fg_color="transparent", bg_color="transparent")
         plot_scale_frame.pack(pady=5)
         plot_scale_label = ctk.CTkLabel(plot_scale_frame, text="Plot scale options", font=("Arial", 12, "bold"),
@@ -881,7 +881,13 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
         plot_scale_button_logarithmic.pack(side="left", padx=15, pady=5)
         plot_scale_frame.configure(fg_color="transparent", bg_color="transparent")
 
-        # Sekcja Action Panel
+        # Sekcja: Add Solar Data Checkbox
+        solar_container = ctk.CTkFrame(options_container, fg_color="transparent", bg_color="transparent")
+        solar_container.pack(pady=5)
+        solar_checkbox = ctk.CTkCheckBox(solar_container, text="Add Solar Data", variable=self.add_solar_var)
+        solar_checkbox.pack(pady=(10, 5))
+
+        # Sekcja: Action Panel
         action_container = ctk.CTkFrame(container, fg_color="transparent", bg_color="transparent")
         action_container.pack(pady=5, fill="both", expand=True)
         ctk.CTkLabel(action_container, text="Action Panel", font=("Arial", 16, "bold"),
@@ -890,7 +896,7 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
                                               command=self.generate_comparision_plot)
         self.comp_plot_button.pack(padx=5, pady=5)
 
-        # Dolny obszar dla przycisków Refresh i Exit
+        # Dolny obszar: przyciski Refresh i Exit (ułożone pionowo, Refresh nad Exit)
         bottom_frame = ctk.CTkFrame(container, fg_color="transparent", bg_color="transparent")
         bottom_frame.pack(side="bottom", fill="x", padx=5, pady=5)
         self.refresh_button = ctk.CTkButton(bottom_frame, text="Refresh", fg_color="green",
@@ -932,7 +938,7 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
         # Pobierz ustawienia wykresu
         plot_type = self.plot_type_var.get()
         log_scale = True if self.plot_scale_var.get() == "logarithmic" else False
-        Plots.plot_two_cols(df1, col1, df2, col2, plot_type=plot_type, log_scale=log_scale, show=True)
+        Plots.plot_two_cols(df1, col1, df2, col2, plot_type=plot_type, log_scale=log_scale, add_sunspot=self.add_solar_var, show=True)
 
 
 if __name__ == "__main__":
