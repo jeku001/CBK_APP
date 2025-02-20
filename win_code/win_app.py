@@ -20,8 +20,10 @@ class App:
 
         self.root = root_local
         self.root.title("Data Parser Application")
-        self.root.geometry("800x650")
+        self.root.geometry("800x700")
         self.parsed_data = None
+        self.all_parsed_data_dict = dict.fromkeys(['ID', 'df', 'list_of_columns'])
+        self.parsed_data_ID = 0
         self.base_folder = None
         self.file_pattern = "0-Power Board"
         self.additional_columns = []
@@ -151,6 +153,8 @@ class App:
             )
 
             self.parsed_data = parsed_data
+
+            self.all_parsed_data_dict.update({'ID': self.parsed_data_ID, 'df': self.parsed_data, 'list_of_columns': additional_columns})
 
             elapsed_time = parser.end_time - parser.start_time
             row_count = len(self.parsed_data)
@@ -592,10 +596,30 @@ class App:
         self.plot_column_scrollbar.pack(side="right", fill="y")
         ctk.CTkButton(self.right_frame, text="Plot Selected Columns", command=self.plot_selected_columns).pack(pady=10)
 
+        self.open_advanced_plots_window_button = ctk.CTkButton(self.right_frame, text="Advanced Plots", command=self.open_advanced_plots_window, fg_color="#1ea70b")
+        self.open_advanced_plots_window_button.pack(pady=10)
+
         exit_button = ctk.CTkButton(self.right_frame, text="Exit", command=self.terminate_app, fg_color="#f73e3e")
         exit_button.pack(side="bottom", pady=10)
 
         self.update_parse_columns()
+
+
+    def open_advanced_plots_window(self):
+        AdvancedPlotsWindow(self, all_parsed_data_dict=self.all_parsed_data_dict)
+
+
+class AdvancedPlotsWindow(ctk.CTkToplevel):
+    def __init__(self, master, all_parsed_data_dict):
+        self.all_parsed_data_dict = all_parsed_data_dict
+        super().__init__()
+        self.title("Advanced Plots")
+        self.geometry("500x400")
+
+        """self.shared_data = main_app.data"""
+
+        self.test_label = ctk.CTkLabel(self, text=f"Dostępne ramki: {list(self.all_parsed_data_dict.values())}")
+        self.test_label.pack(pady=20)
 
 
 if __name__ == "__main__":
