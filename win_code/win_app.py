@@ -5,6 +5,7 @@ from win_parser import Parser
 from win_plot import Plots
 import os
 import matplotlib
+import matplotlib as plt
 from threading import Thread
 from win_tooltip import ToolTip
 import psutil
@@ -13,16 +14,16 @@ import gc
 matplotlib.use("TkAgg")
 
 
-class App:
-    def __init__(self, root_local):
+class App(ctk.CTk):
+    def __init__(self):
+        super().__init__()
         ctk.set_appearance_mode("Light")
         ctk.set_default_color_theme("blue")
 
-        self.root = root_local
-        self.root.title("Data Parser Application")
-        self.root.geometry("800x700")
+        self.title("Data Parser Application")
+        self.geometry("800x700")
         self.parsed_data = None
-        self.all_parsed_data_dict = dict.fromkeys(['ID', 'df', 'list_of_columns'])
+        self.all_parsed_data_dict = {}
         self.parsed_data_ID = 0
         self.base_folder = None
         self.file_pattern = "0-Power Board"
@@ -40,7 +41,7 @@ class App:
         self.start_year_entry = None
         self.progress_var = tk.DoubleVar()
         self.progress_queue = queue.Queue()
-        self.root.after(100, self.check_progress_queue)
+        self.after(100, self.check_progress_queue)
         self.pattern_columns = {
             "0-Power Board": self.get_columns_0(),
             "1-BCDR0": self.get_columns_1(),
@@ -53,9 +54,9 @@ class App:
             "8-ADC_SUB": self.get_columns_8(),
             "9-Header Board": self.get_columns_9()
         }
-        self.left_frame = ctk.CTkFrame(self.root, width=250, corner_radius=10)
-        self.center_frame = ctk.CTkFrame(self.root, corner_radius=10, bg_color="transparent")
-        self.right_frame = ctk.CTkFrame(self.root, width=200, corner_radius=10)
+        self.left_frame = ctk.CTkFrame(self, width=250, corner_radius=10)
+        self.center_frame = ctk.CTkFrame(self, corner_radius=10, bg_color="transparent")
+        self.right_frame = ctk.CTkFrame(self, width=200, corner_radius=10)
 
         self.setup_center_frame()
         self.setup_left_frame()
@@ -154,7 +155,8 @@ class App:
 
             self.parsed_data = parsed_data
 
-            self.all_parsed_data_dict.update({'ID': self.parsed_data_ID, 'df': self.parsed_data, 'list_of_columns': additional_columns})
+            self.all_parsed_data_dict[self.parsed_data_ID] = {'df': self.parsed_data, 'list_of_columns': additional_columns}
+            self.parsed_data_ID += 1
 
             elapsed_time = parser.end_time - parser.start_time
             row_count = len(self.parsed_data)
@@ -210,7 +212,7 @@ class App:
         except queue.Empty:
             pass
 
-        self.root.after(100, self.check_progress_queue)
+        self.after(100, self.check_progress_queue)
 
     def toggle_workers(self):
         mode = self.mode_var.get()
@@ -236,7 +238,7 @@ class App:
             if output_file:
                 try:
 
-                    self.root.update_idletasks()
+                    self.update_idletasks()
 
                     self.parsed_data.to_csv(output_file, index=False)
 
@@ -359,8 +361,8 @@ class App:
                 "'Controller Max DT File", "'Controller SetPoint File", "'Controller I State File"]
 
     def update_plot_columns_list_safe(self):
-        if self.root:
-            self.root.after(0, self.update_plot_columns_list)
+        if self:
+            self.after(0, self.update_plot_columns_list)
 
     def update_plot_columns_list(self):
         for widget in self.plot_column_scrollable_frame.winfo_children():
@@ -433,10 +435,10 @@ class App:
     def update_cpu_usage(self):
         cpu_usage = psutil.cpu_percent()
         self.cpu_label.configure(text=f"CPU usage: {cpu_usage}%")
-        self.root.after(1000, self.update_cpu_usage)
+        self.after(1000, self.update_cpu_usage)
 
     def terminate_app(self):
-        self.root.destroy()
+        self.destroy()
 
     @staticmethod
     def create_tooltip(widget, text):
@@ -609,23 +611,93 @@ class App:
         AdvancedPlotsWindow(self, all_parsed_data_dict=self.all_parsed_data_dict)
 
 
+import customtkinter as ctk
+
+
 class AdvancedPlotsWindow(ctk.CTkToplevel):
     def __init__(self, master, all_parsed_data_dict):
+        super().__init__(master)
+        self.master = master
         self.all_parsed_data_dict = all_parsed_data_dict
-        super().__init__()
+
         self.title("Advanced Plots")
-        self.geometry("500x400")
+        self.geometry("800x600")
 
-        """self.shared_data = main_app.data"""
+        # Ustawiamy grid tylko dla lewego panelu (pozostałe panele usunięte)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
 
-        self.test_label = ctk.CTkLabel(self, text=f"Dostępne ramki: {list(self.all_parsed_data_dict.values())}")
-        self.test_label.pack(pady=20)
+        # Lewy panel – lista ramek danych
+        self.left_panel = ctk.CTkFrame(self)
+        self.left_panel.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+
+        # Budujemy lewy panel
+        self.build_left_panel()
+
+    def build_left_panel(self):
+        # Scrollowalna ramka w lewym panelu na wypadek, gdy będzie dużo danych
+        self.scrollable_left = ctk.CTkScrollableFrame(self.left_panel, height=400)
+        self.scrollable_left.pack(fill="both", expand=True)
+
+        # Słownik do przechowywania widgetów dla każdej ramki
+        self.left_items = {}
+        # Dla każdego wpisu w słowniku danych
+        for df_id, df_info in self.all_parsed_data_dict.items():
+            item_frame = ctk.CTkFrame(self.scrollable_left)
+            item_frame.pack(fill="x", pady=5, padx=5)
+
+            # Przycisk rozwijania/składania listy kolumn – wyświetla ID ramki
+            toggle_button = ctk.CTkButton(item_frame, text=f"ID: {df_id}",
+                                          command=lambda id=df_id: self.toggle_columns(id))
+            toggle_button.pack(side="left", padx=5)
+
+            # Przycisk usuwania ramki danych
+            remove_button = ctk.CTkButton(item_frame, text="Usuń", fg_color="red",
+                                          command=lambda id=df_id: self.remove_dataframe(id))
+            remove_button.pack(side="right", padx=5)
+
+            # Ramka do wyświetlenia listy kolumn – początkowo ukryta
+            col_frame = ctk.CTkFrame(self.scrollable_left)
+            col_frame.pack(fill="x", padx=20)
+            col_frame.pack_forget()
+
+            # Etykieta z listą kolumn, oddzielonych przecinkami
+            columns = df_info.get("list_of_columns", [])
+            col_label = ctk.CTkLabel(col_frame, text=", ".join(columns))
+            col_label.pack(side="left")
+
+            self.left_items[df_id] = {
+                "toggle_button": toggle_button,
+                "remove_button": remove_button,
+                "col_frame": col_frame,
+                "col_label": col_label
+            }
+
+    def toggle_columns(self, df_id):
+        # Pokazuje lub ukrywa ramkę z listą kolumn
+        item = self.left_items.get(df_id)
+        if item:
+            if item["col_frame"].winfo_ismapped():
+                item["col_frame"].pack_forget()
+            else:
+                item["col_frame"].pack(fill="x", padx=20)
+
+    def remove_dataframe(self, df_id):
+        # Usuwa ramkę danych ze słownika i interfejsu
+        if df_id in self.all_parsed_data_dict:
+            del self.all_parsed_data_dict[df_id]
+        item = self.left_items.get(df_id)
+        if item:
+            item["toggle_button"].destroy()
+            item["remove_button"].destroy()
+            item["col_frame"].destroy()
+            del self.left_items[df_id]
+        gc.collect()
 
 
 if __name__ == "__main__":
     import multiprocessing
 
     multiprocessing.freeze_support()
-    root = tk.Tk()
-    app = App(root)
-    root.mainloop()
+    app = App()
+    app.mainloop()
