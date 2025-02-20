@@ -611,9 +611,6 @@ class App(ctk.CTk):
         AdvancedPlotsWindow(self, all_parsed_data_dict=self.all_parsed_data_dict)
 
 
-import customtkinter as ctk
-
-
 class AdvancedPlotsWindow(ctk.CTkToplevel):
     def __init__(self, master, all_parsed_data_dict):
         super().__init__(master)
@@ -623,45 +620,51 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
         self.title("Advanced Plots")
         self.geometry("800x600")
 
-        # Ustawiamy grid tylko dla lewego panelu (pozostałe panele usunięte)
+        # Ustawiamy grid na trzy kolumny: lewy, centralny, prawy
         self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_columnconfigure(2, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
         # Lewy panel – lista ramek danych
         self.left_panel = ctk.CTkFrame(self)
         self.left_panel.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
-
-        # Budujemy lewy panel
         self.build_left_panel()
 
+        # Centralny panel – wybór DF i kolumny + info o użyciu RAM
+        self.center_panel = ctk.CTkFrame(self)
+        self.center_panel.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
+        self.build_center_panel()
+
+        # Prawy panel – panel akcji z przyciskami
+        self.right_panel = ctk.CTkFrame(self)
+        self.right_panel.grid(row=0, column=2, sticky="nsew", padx=5, pady=5)
+        self.build_right_panel()
+
     def build_left_panel(self):
-        # Scrollowalna ramka w lewym panelu na wypadek, gdy będzie dużo danych
+        # Tytuł lewego panelu
+        ctk.CTkLabel(self.left_panel, text="Parsed Dataframes", font=("Arial", 16, "bold")).pack(pady=10)
+
         self.scrollable_left = ctk.CTkScrollableFrame(self.left_panel, height=400)
         self.scrollable_left.pack(fill="both", expand=True)
 
-        # Słownik do przechowywania widgetów dla każdej ramki
         self.left_items = {}
-        # Dla każdego wpisu w słowniku danych
         for df_id, df_info in self.all_parsed_data_dict.items():
             item_frame = ctk.CTkFrame(self.scrollable_left)
             item_frame.pack(fill="x", pady=5, padx=5)
 
-            # Przycisk rozwijania/składania listy kolumn – wyświetla ID ramki
             toggle_button = ctk.CTkButton(item_frame, text=f"ID: {df_id}",
                                           command=lambda id=df_id: self.toggle_columns(id))
             toggle_button.pack(side="left", padx=5)
 
-            # Przycisk usuwania ramki danych
             remove_button = ctk.CTkButton(item_frame, text="Usuń", fg_color="red",
                                           command=lambda id=df_id: self.remove_dataframe(id))
             remove_button.pack(side="right", padx=5)
 
-            # Ramka do wyświetlenia listy kolumn – początkowo ukryta
             col_frame = ctk.CTkFrame(self.scrollable_left)
             col_frame.pack(fill="x", padx=20)
-            col_frame.pack_forget()
+            col_frame.pack_forget()  # Początkowo ukryta
 
-            # Etykieta z listą kolumn, oddzielonych przecinkami
             columns = df_info.get("list_of_columns", [])
             col_label = ctk.CTkLabel(col_frame, text=", ".join(columns))
             col_label.pack(side="left")
@@ -674,7 +677,6 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
             }
 
     def toggle_columns(self, df_id):
-        # Pokazuje lub ukrywa ramkę z listą kolumn
         item = self.left_items.get(df_id)
         if item:
             if item["col_frame"].winfo_ismapped():
@@ -683,7 +685,6 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
                 item["col_frame"].pack(fill="x", padx=20)
 
     def remove_dataframe(self, df_id):
-        # Usuwa ramkę danych ze słownika i interfejsu
         if df_id in self.all_parsed_data_dict:
             del self.all_parsed_data_dict[df_id]
         item = self.left_items.get(df_id)
@@ -692,8 +693,127 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
             item["remove_button"].destroy()
             item["col_frame"].destroy()
             del self.left_items[df_id]
-        gc.collect()
+        self.update_selection_options()
 
+    def update_selection_options(self):
+        self.df_ids = [str(k) for k in self.all_parsed_data_dict.keys()]
+        if not self.df_ids:
+            self.df_ids = ["No Data"]
+        self.df_select_1.configure(values=self.df_ids)
+        self.df_select_2.configure(values=self.df_ids)
+
+    def build_center_panel(self):
+        # Tytuł centralnego panelu
+        ctk.CTkLabel(self.center_panel, text="Dataframes Selection", font=("Arial", 16, "bold")).pack(pady=10)
+
+        # Pierwsze okienko wyboru (DF1)
+        self.selection_frame1 = ctk.CTkFrame(self.center_panel)
+        self.selection_frame1.pack(fill="x", padx=5, pady=5)
+
+        self.df_ids = [str(k) for k in self.all_parsed_data_dict.keys()]
+        if not self.df_ids:
+            self.df_ids = ["No Data"]
+
+        self.df_select_1 = ctk.CTkOptionMenu(self.selection_frame1, values=self.df_ids, command=self.update_columns_1)
+        self.df_select_1.pack(side="left", padx=5, pady=5)
+        self.df_select_1.set(self.df_ids[0])
+        try:
+            id1 = int(self.df_select_1.get())
+        except:
+            id1 = None
+        columns1 = self.all_parsed_data_dict.get(id1, {}).get("list_of_columns", []) if id1 is not None else []
+        self.col_select_1 = ctk.CTkOptionMenu(self.selection_frame1, values=columns1)
+        self.col_select_1.pack(side="left", padx=5, pady=5)
+        if columns1:
+            self.col_select_1.set(columns1[0])
+
+        # Drugie okienko wyboru (DF2)
+        self.selection_frame2 = ctk.CTkFrame(self.center_panel)
+        self.selection_frame2.pack(fill="x", padx=5, pady=5)
+
+        self.df_select_2 = ctk.CTkOptionMenu(self.selection_frame2, values=self.df_ids, command=self.update_columns_2)
+        self.df_select_2.pack(side="left", padx=5, pady=5)
+        self.df_select_2.set(self.df_ids[0])
+        try:
+            id2 = int(self.df_select_2.get())
+        except:
+            id2 = None
+        columns2 = self.all_parsed_data_dict.get(id2, {}).get("list_of_columns", []) if id2 is not None else []
+        self.col_select_2 = ctk.CTkOptionMenu(self.selection_frame2, values=columns2)
+        self.col_select_2.pack(side="left", padx=5, pady=5)
+        if columns2:
+            self.col_select_2.set(columns2[0])
+
+        # Dodajemy na dole centralnego panelu etykietę z aktualnym użyciem RAM
+        self.ram_label = ctk.CTkLabel(self.center_panel, text="RAM Usage: ", font=("Arial", 12))
+        self.ram_label.pack(side="bottom", pady=10)
+        self.update_ram_usage()
+
+    def update_columns_1(self, selected_id):
+        try:
+            id_int = int(selected_id)
+        except:
+            id_int = None
+        columns = self.all_parsed_data_dict.get(id_int, {}).get("list_of_columns", [])
+        self.col_select_1.configure(values=columns)
+        if columns:
+            self.col_select_1.set(columns[0])
+
+    def update_columns_2(self, selected_id):
+        try:
+            id_int = int(selected_id)
+        except:
+            id_int = None
+        columns = self.all_parsed_data_dict.get(id_int, {}).get("list_of_columns", [])
+        self.col_select_2.configure(values=columns)
+        if columns:
+            self.col_select_2.set(columns[0])
+
+    def update_ram_usage(self):
+        mem = psutil.virtual_memory()
+        usage = f"RAM Usage: {mem.percent}% ({mem.used // (1024*1024)} MB / {mem.total // (1024*1024)} MB)"
+        self.ram_label.configure(text=usage)
+        self.after(1000, self.update_ram_usage)
+
+    def build_right_panel(self):
+        # Tytuł prawego panelu
+        ctk.CTkLabel(self.right_panel, text="Action Panel", font=("Arial", 16, "bold")).pack(pady=10)
+
+        self.comp_plot_button = ctk.CTkButton(self.right_panel, text="Generuj wykres porównawczy",
+                                              command=self.generate_comparision_plot)
+        self.comp_plot_button.pack(padx=5, pady=5)
+
+        # Dolny obszar w prawym panelu z przyciskami Refresh i Exit, ułożone pionowo
+        bottom_frame = ctk.CTkFrame(self.right_panel)
+        bottom_frame.pack(side="bottom", fill="x", padx=5, pady=5)
+        self.refresh_button = ctk.CTkButton(bottom_frame, text="Refresh", fg_color="#1ea70b", command=self.refresh_window)
+        self.refresh_button.pack(side="top", padx=5, pady=5)
+        self.exit_button = ctk.CTkButton(bottom_frame, text="Exit", fg_color="red", command=self.destroy)
+        self.exit_button.pack(side="top", padx=5, pady=5)
+
+    def refresh_window(self):
+        current_geometry = self.geometry()
+        self.destroy()
+        new_window = AdvancedPlotsWindow(self.master, self.all_parsed_data_dict)
+        new_window.geometry(current_geometry)
+    def generate_comparision_plot(self):
+        df_id_1 = self.df_select_1.get()
+        df_id_2 = self.df_select_2.get()
+        col1 = self.col_select_1.get()
+        col2 = self.col_select_2.get()
+        try:
+            id1 = int(df_id_1)
+            id2 = int(df_id_2)
+        except:
+            print("Nieprawidłowe identyfikatory ramek danych")
+            return
+        df1 = self.all_parsed_data_dict.get(id1, {}).get("df", None)
+        df2 = self.all_parsed_data_dict.get(id2, {}).get("df", None)
+        if df1 is None or df2 is None:
+            print("Nie znaleziono odpowiedniej ramki danych")
+            return
+        # Wywołujemy funkcję plot_two_cols z klasy Plots:
+        Plots.plot_two_cols(df1, col1, df2, col2, log_scale=False, show=True)
 
 if __name__ == "__main__":
     import multiprocessing
