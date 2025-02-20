@@ -36,3 +36,23 @@ class Plots:
                 plt.grid(True)
 
                 plt.show()
+
+    @staticmethod
+    def plot_two_cols(df1, column1, df2, column2, log_scale=False, show=False):
+        plt.figure(figsize=(10, 6))
+        plt.plot(df1[df1.columns[0]], df1[column1], label=f'{column1} (DF1)', color='blue')
+        plt.plot(df2[df2.columns[0]], df2[column2], label=f'{column2} (DF2)', color='orange')
+        if log_scale:
+            plt.yscale('log')
+            plt.title(f'Logarithmic Scale Plot: {column1} & {column2}')
+        else:
+            plt.title(f'Plot: {column1} & {column2}')
+        plt.xlabel('Time')
+        plt.ylabel('Values')
+        plt.legend(loc="upper right")
+        plt.grid(True)
+        if show:
+            plt.show()
+        return plt
+
+
