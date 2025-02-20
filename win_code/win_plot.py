@@ -77,18 +77,21 @@ class Plots:
     def plot_two_cols(df1, column1, df2, column2,
                       plot_type="line", log_scale=False,
                       show=False, add_sunspot=False):
-        plt.figure(figsize=(10, 6))
-        if plot_type == "line":
-            plt.plot(df1[df1.columns[0]], df1[column1],
-                     label=f'{column1} (DF1)', color='blue', linewidth=0.5)
-            plt.plot(df2[df2.columns[0]], df2[column2],
-                     label=f'{column2} (DF2)', color='orange', linewidth=0.5)
-        elif plot_type == "scatter":
-            plt.scatter(df1[df1.columns[0]], df1[column1],
-                        label=f'{column1} (DF1)', color='blue', s=1)
-            plt.scatter(df2[df2.columns[0]], df2[column2],
-                        label=f'{column2} (DF2)', color='orange', s=1)
+        fig, ax = plt.subplots(figsize=(10, 6))
 
+        # Rysowanie danych z df1 i df2 na głównej osi ax
+        if plot_type == "line":
+            ax.plot(df1[df1.columns[0]], df1[column1],
+                    label=f'{column1} (DF1)', color='blue', linewidth=0.5)
+            ax.plot(df2[df2.columns[0]], df2[column2],
+                    label=f'{column2} (DF2)', color='orange', linewidth=0.5)
+        elif plot_type == "scatter":
+            ax.scatter(df1[df1.columns[0]], df1[column1],
+                       label=f'{column1} (DF1)', color='blue', s=1)
+            ax.scatter(df2[df2.columns[0]], df2[column2],
+                       label=f'{column2} (DF2)', color='orange', s=1)
+
+        # Jeśli zaznaczono opcję dodania sunspotów, utwórz drugą oś y
         if add_sunspot:
             # Ładujemy dane o plamach słonecznych wraz z kolumną Datetime
             sunspot_df = Plots.load_sunspot_data()
@@ -96,20 +99,45 @@ class Plots:
             x_sun = sunspot_df["Datetime"]
             # Zakładamy, że liczba sunspotów jest w czwartej kolumnie (indeks 3)
             y_sun = sunspot_df.iloc[:, 3]
+
+            # Filtrowanie danych sunspot dla zakresu lat z df1 i df2 (podobnie jak wcześniej)
+            min_year_value = min(df1[df1.columns[0]].min().year, df2[df2.columns[0]].min().year)
+            max_year_value = max(df1[df1.columns[0]].max().year, df2[df2.columns[0]].max().year)
+            min_year = pd.to_datetime(str(min_year_value), format='%Y')
+            max_year = pd.to_datetime(str(max_year_value), format='%Y')
+            mask = (sunspot_df["Datetime"] >= min_year) & (sunspot_df["Datetime"] <= max_year)
+            filtered_sunspot_df = sunspot_df.loc[mask]
+            x_sun = filtered_sunspot_df["Datetime"]
+            y_sun = filtered_sunspot_df.iloc[:, 3]
+
+            # Tworzymy drugą oś y, która będzie miała własną skalę
+            ax2 = ax.twinx()
             if plot_type == "line":
-                plt.plot(x_sun, y_sun, label="Sunspot", color="red", linewidth=0.5)
+                ax2.plot(x_sun, y_sun, label="Sunspot", color="red", linewidth=0.5)
             elif plot_type == "scatter":
-                plt.scatter(x_sun, y_sun, label="Sunspot", color="red", s=1)
+                ax2.scatter(x_sun, y_sun, label="Sunspot", color="red", s=1)
+            ax2.set_ylabel("Sunspot Values", color="red")
+            # Opcjonalnie można dopasować etykiety osi ax2
+            ax2.tick_params(axis="y", labelcolor="red")
+
+            # Łączymy legendy obu osi
+            lines, labels = ax.get_legend_handles_labels()
+            lines2, labels2 = ax2.get_legend_handles_labels()
+            ax.legend(lines + lines2, labels + labels2, loc="upper right")
+        else:
+            ax.legend(loc="upper right")
 
         if log_scale:
-            plt.yscale('log')
-            plt.title(f'Logarithmic Scale Plot: {column1} & {column2}')
+            ax.set_yscale('log')
+            ax.set_title(f'Logarithmic Scale Plot: {column1} & {column2}')
         else:
-            plt.title(f'Plot: {column1} & {column2}')
-        plt.xlabel("Time (Year)")
-        plt.ylabel("Values")
-        plt.legend(loc="upper right")
-        plt.grid(True)
+            ax.set_title(f'Plot: {column1} & {column2}')
+        ax.set_xlabel("Time (Year)")
+        ax.set_ylabel("Values")
+        ax.grid(True)
+        # Dodajemy kursor (jeśli potrzebny)
+        from matplotlib.widgets import Cursor
+        cursor = Cursor(ax, useblit=True, color='red', linewidth=0.2)
         if show:
             plt.show()
         return plt

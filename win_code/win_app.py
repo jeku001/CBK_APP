@@ -928,12 +928,12 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
             id1 = int(df_id_1)
             id2 = int(df_id_2)
         except:
-            print("Nieprawidłowe identyfikatory ramek danych")
+            print("Error")
             return
         df1 = self.all_parsed_data_dict.get(id1, {}).get("df", None)
         df2 = self.all_parsed_data_dict.get(id2, {}).get("df", None)
         if df1 is None or df2 is None:
-            print("Nie znaleziono odpowiedniej ramki danych")
+            print("None")
             return
         # Pobierz ustawienia wykresu
         plot_type = self.plot_type_var.get()
