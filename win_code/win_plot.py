@@ -9,14 +9,32 @@ class Plots:
 
     @staticmethod
     def load_sunspot_data(sunspot_path="2010_2024_Sunspot_number_F10_daily.csv"):
-        try:
+        """ Wczytuje dane o plamach słonecznych, obsługując tryb PyInstaller """
+
+        # Znalezienie poprawnej ścieżki pliku
+        if getattr(sys, 'frozen', False):  # Sprawdza, czy program jest skompilowany przez PyInstaller
             base_path = sys._MEIPASS
-        except Exception:
-            base_path = os.path.abspath(os.path.join(".", "../additional_data"))
+        else:
+            base_path = os.path.abspath(os.path.join(os.getcwd(), "../additional_data"))
+
         full_path = os.path.join(base_path, sunspot_path)
-        sunspot_df = pd.read_csv(full_path, delim_whitespace=True, header=None)
-        sunspot_df["Datetime"] = Plots.combine_datetime(sunspot_df)
+
+        # Sprawdzenie, czy plik istnieje
+        if not os.path.isfile(full_path):
+            raise FileNotFoundError(f"Error: File '{full_path}' not found.")
+
+        try:
+            # Wczytywanie pliku CSV
+            sunspot_df = pd.read_csv(full_path, sep=r'\s+', engine='python', header=None,
+                                     names=["Year", "Day_of_Year", "Hour", "Sunspot_Number", "F10.7_Index"])
+            # Tworzenie kolumny z datą
+            sunspot_df["Datetime"] = Plots.combine_datetime(sunspot_df)
+
+        except Exception as e:
+            raise RuntimeError(f"Error loading CSV file '{full_path}': {e}")
+
         return sunspot_df
+
 
     @staticmethod
     def combine_datetime(df):
@@ -63,20 +81,20 @@ class Plots:
     @staticmethod
     def plot_two_cols(df1, column1, df2, column2,
                       plot_type="line", log_scale=False,
-                      show=False, add_sunspot=False):
+                      show=False, add_sunspot=None):
         fig, ax = plt.subplots(figsize=(10, 6))
         add_sunspot = add_sunspot.get()
 
         if plot_type == "line":
             ax.plot(df1[df1.columns[0]], df1[column1],
-                    label=f'{column1} (DF1)', color='blue', linewidth=0.5)
+                    label=f'{column1} (DF1)', color='blue', linewidth=0.2)
             ax.plot(df2[df2.columns[0]], df2[column2],
-                    label=f'{column2} (DF2)', color='orange', linewidth=0.5)
+                    label=f'{column2} (DF2)', color='orange', linewidth=0.2)
         elif plot_type == "scatter":
             ax.scatter(df1[df1.columns[0]], df1[column1],
-                       label=f'{column1} (DF1)', color='blue', s=1)
+                       label=f'{column1} (DF1)', color='blue', s=0.2)
             ax.scatter(df2[df2.columns[0]], df2[column2],
-                       label=f'{column2} (DF2)', color='orange', s=1)
+                       label=f'{column2} (DF2)', color='orange', s=0.2)
 
         if add_sunspot:
             print("wszedlem tu (Jest true)")
@@ -87,7 +105,7 @@ class Plots:
             y_sun = sunspot_df.iloc[:, 3]
 
             min_year_value = min(df1[df1.columns[0]].min().year, df2[df2.columns[0]].min().year)
-            max_year_value = max(df1[df1.columns[0]].max().year, df2[df2.columns[0]].max().year)
+            max_year_value = max(df1[df1.columns[0]].max().year, df2[df2.columns[0]].max().year) + 1
             min_year = pd.to_datetime(str(min_year_value), format='%Y')
             max_year = pd.to_datetime(str(max_year_value), format='%Y')
             mask = (sunspot_df["Datetime"] >= min_year) & (sunspot_df["Datetime"] <= max_year)
@@ -96,10 +114,8 @@ class Plots:
             y_sun = filtered_sunspot_df.iloc[:, 3]
 
             ax2 = ax.twinx()
-            if plot_type == "line":
-                ax2.plot(x_sun, y_sun, label="Sunspot", color="red", linewidth=0.5)
-            elif plot_type == "scatter":
-                ax2.scatter(x_sun, y_sun, label="Sunspot", color="red", s=1)
+            ax2.plot(x_sun, y_sun, label="Sunspot", color="red", linewidth=0.5)
+
             ax2.set_ylabel("Sunspot Values", color="red")
             ax2.tick_params(axis="y", labelcolor="red")
 

@@ -745,6 +745,7 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
                 item["col_frame"].destroy()
             del self.left_items[df_id]
 
+        gc.collect()
         self.update_selection_options()  #
 
     def update_selection_options(self):
