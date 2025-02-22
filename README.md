@@ -33,6 +33,7 @@ The data originates from the Lem and Heweliusz satellites. However, the raw data
 - **LEM Satellite**: A Polish satellite launched in 2013, primarily designed for stellar photometry and astrophysical observations.
 - **HEWELIUSZ Satellite**: Launched in 2014, Heweliusz complements Lem's mission with additional capabilities for space environment monitoring. Housekeeping dataset spans from their launch dates to the present, amounting to over 30GB of CSV files.
 
+Daily sunspots number from http://sidc.oma.be/silso/datafiles
 
 ### Data Format
 The files are organized in a hierarchical structure. For example:
