@@ -65,6 +65,7 @@ class Plots:
                       plot_type="line", log_scale=False,
                       show=False, add_sunspot=False):
         fig, ax = plt.subplots(figsize=(10, 6))
+        add_sunspot = add_sunspot.get()
 
         if plot_type == "line":
             ax.plot(df1[df1.columns[0]], df1[column1],
@@ -78,6 +79,9 @@ class Plots:
                        label=f'{column2} (DF2)', color='orange', s=1)
 
         if add_sunspot:
+            print("wszedlem tu (Jest true)")
+            print(f"type of var: {add_sunspot}")
+            # print(f"type of var 'z get': {add_sunspot.get()}")
             sunspot_df = Plots.load_sunspot_data()
             x_sun = sunspot_df["Datetime"]
             y_sun = sunspot_df.iloc[:, 3]
