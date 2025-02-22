@@ -5,6 +5,7 @@ from win_parser import Parser
 from win_plot import Plots
 import os
 import matplotlib
+import matplotlib as plt
 from threading import Thread
 from win_tooltip import ToolTip
 import psutil
@@ -13,15 +14,17 @@ import gc
 matplotlib.use("TkAgg")
 
 
-class App:
-    def __init__(self, root_local):
+class App(ctk.CTk):
+    def __init__(self):
+        super().__init__()
         ctk.set_appearance_mode("Light")
         ctk.set_default_color_theme("blue")
 
-        self.root = root_local
-        self.root.title("Data Parser Application")
-        self.root.geometry("800x650")
+        self.title("Data Parser Application")
+        self.geometry("800x700")
         self.parsed_data = None
+        self.all_parsed_data_dict = {}
+        self.parsed_data_ID = 0
         self.base_folder = None
         self.file_pattern = "0-Power Board"
         self.additional_columns = []
@@ -38,7 +41,7 @@ class App:
         self.start_year_entry = None
         self.progress_var = tk.DoubleVar()
         self.progress_queue = queue.Queue()
-        self.root.after(100, self.check_progress_queue)
+        self.after(100, self.check_progress_queue)
         self.pattern_columns = {
             "0-Power Board": self.get_columns_0(),
             "1-BCDR0": self.get_columns_1(),
@@ -51,9 +54,9 @@ class App:
             "8-ADC_SUB": self.get_columns_8(),
             "9-Header Board": self.get_columns_9()
         }
-        self.left_frame = ctk.CTkFrame(self.root, width=250, corner_radius=10)
-        self.center_frame = ctk.CTkFrame(self.root, corner_radius=10, bg_color="transparent")
-        self.right_frame = ctk.CTkFrame(self.root, width=200, corner_radius=10)
+        self.left_frame = ctk.CTkFrame(self, width=250, corner_radius=10)
+        self.center_frame = ctk.CTkFrame(self, corner_radius=10, bg_color="transparent")
+        self.right_frame = ctk.CTkFrame(self, width=200, corner_radius=10)
 
         self.setup_center_frame()
         self.setup_left_frame()
@@ -152,6 +155,9 @@ class App:
 
             self.parsed_data = parsed_data
 
+            self.all_parsed_data_dict[self.parsed_data_ID] = {'df': self.parsed_data, 'list_of_columns': additional_columns}
+            self.parsed_data_ID += 1
+
             elapsed_time = parser.end_time - parser.start_time
             row_count = len(self.parsed_data)
 
@@ -206,7 +212,7 @@ class App:
         except queue.Empty:
             pass
 
-        self.root.after(100, self.check_progress_queue)
+        self.after(100, self.check_progress_queue)
 
     def toggle_workers(self):
         mode = self.mode_var.get()
@@ -223,7 +229,6 @@ class App:
 
     def download_parsed_file(self):
         if self.parsed_data is not None and not self.parsed_data.empty:
-            # print(self.parsed_data)
             output_file = filedialog.asksaveasfilename(
                 defaultextension=".csv",
                 filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
@@ -232,7 +237,7 @@ class App:
             if output_file:
                 try:
 
-                    self.root.update_idletasks()
+                    self.update_idletasks()
 
                     self.parsed_data.to_csv(output_file, index=False)
 
@@ -355,8 +360,8 @@ class App:
                 "'Controller Max DT File", "'Controller SetPoint File", "'Controller I State File"]
 
     def update_plot_columns_list_safe(self):
-        if self.root:
-            self.root.after(0, self.update_plot_columns_list)
+        if self:
+            self.after(0, self.update_plot_columns_list)
 
     def update_plot_columns_list(self):
         for widget in self.plot_column_scrollable_frame.winfo_children():
@@ -429,10 +434,10 @@ class App:
     def update_cpu_usage(self):
         cpu_usage = psutil.cpu_percent()
         self.cpu_label.configure(text=f"CPU usage: {cpu_usage}%")
-        self.root.after(1000, self.update_cpu_usage)
+        self.after(1000, self.update_cpu_usage)
 
     def terminate_app(self):
-        self.root.destroy()
+        self.destroy()
 
     @staticmethod
     def create_tooltip(widget, text):
@@ -592,16 +597,337 @@ class App:
         self.plot_column_scrollbar.pack(side="right", fill="y")
         ctk.CTkButton(self.right_frame, text="Plot Selected Columns", command=self.plot_selected_columns).pack(pady=10)
 
+        self.open_advanced_plots_window_button = ctk.CTkButton(self.right_frame, text="Advanced Plots", command=self.open_advanced_plots_window, fg_color="#1ea70b")
+        self.open_advanced_plots_window_button.pack(pady=10)
+
         exit_button = ctk.CTkButton(self.right_frame, text="Exit", command=self.terminate_app, fg_color="#f73e3e")
         exit_button.pack(side="bottom", pady=10)
 
         self.update_parse_columns()
 
 
+    def open_advanced_plots_window(self):
+        AdvancedPlotsWindow(self, all_parsed_data_dict=self.all_parsed_data_dict)
+
+
+class AdvancedPlotsWindow(ctk.CTkToplevel):
+    def __init__(self, master, all_parsed_data_dict):
+        super().__init__(master)
+        self.master = master
+        self.all_parsed_data_dict = all_parsed_data_dict
+
+        self.title("Advanced Plots")
+        self.geometry("800x600")
+
+        self.add_solar_var = ctk.BooleanVar(value=False)
+
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_columnconfigure(2, weight=1)
+        self.grid_rowconfigure(0, weight=1)
+
+        self.left_panel = ctk.CTkFrame(self, fg_color="transparent", bg_color="transparent")
+        self.left_panel.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+
+        self.center_panel = ctk.CTkFrame(self, fg_color="transparent", bg_color="transparent")
+        self.center_panel.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
+
+        self.right_panel = ctk.CTkFrame(self, fg_color="transparent", bg_color="transparent")
+        self.right_panel.grid(row=0, column=2, sticky="nsew", padx=5, pady=5)
+
+        self.build_left_panel()
+        self.build_center_panel()
+        self.build_right_panel()
+
+    def build_left_panel(self):
+        container = ctk.CTkFrame(self.left_panel, fg_color="transparent", bg_color="transparent")
+        container.pack(fill="both", expand=True)
+
+        ctk.CTkLabel(
+            container,
+            text="Parsed Dataframes",
+            font=("Arial", 16, "bold"),
+            fg_color="transparent",
+            bg_color="transparent"
+        ).pack(pady=10)
+
+        self.scrollable_left = ctk.CTkScrollableFrame(
+            container,
+            height=300,
+            fg_color="transparent",
+            bg_color="transparent"
+        )
+        self.scrollable_left.pack(fill="both", expand=True, padx=5, pady=5)
+
+        self.left_items = {}
+        for df_id, df_info in self.all_parsed_data_dict.items():
+            item_frame = ctk.CTkFrame(self.scrollable_left, fg_color="transparent", bg_color="transparent")
+            item_frame.pack(fill="x", pady=5)
+
+            id_button = ctk.CTkButton(
+                item_frame,
+                text=f"{df_id}",
+                width=40,
+                command=lambda i=df_id: self.select_dataframe(i)
+            )
+            id_button.pack(side="left", padx=5)
+
+            remove_button = ctk.CTkButton(
+                item_frame,
+                text="Usuń",
+                fg_color="red",
+                command=lambda i=df_id: self.remove_dataframe(i)
+            )
+            remove_button.pack(side="right", padx=5)
+
+            self.left_items[df_id] = {
+                "id_button": id_button,
+                "remove_button": remove_button
+            }
+
+        self.columns_frame = ctk.CTkFrame(container, fg_color="transparent", bg_color="transparent")
+        self.columns_frame.pack(side="bottom", fill="x", pady=10)
+
+        ctk.CTkLabel(
+            self.columns_frame,
+            text="Parsed columns in selected DF",
+            font=("Arial", 12, "bold"),
+            fg_color="transparent",
+            bg_color="transparent"
+        ).pack(pady=5)
+
+        self.columns_scrollable = ctk.CTkScrollableFrame(
+            self.columns_frame,
+            fg_color="transparent",
+            bg_color="transparent",
+            height=100
+        )
+        self.columns_scrollable.pack(fill="x", expand=True, padx=5, pady=5)
+
+    def select_dataframe(self, df_id):
+        for widget in self.columns_scrollable.winfo_children():
+            widget.destroy()
+
+        columns = self.all_parsed_data_dict.get(df_id, {}).get("list_of_columns", [])
+        for col in columns:
+            ctk.CTkLabel(
+                self.columns_scrollable,
+                text=col,
+                fg_color="transparent",
+                bg_color="transparent"
+            ).pack(anchor="w", padx=5, pady=2)
+
+    def toggle_columns(self, df_id):
+        item = self.left_items.get(df_id)
+        if item:
+            if item["col_frame"].winfo_ismapped():
+                item["col_frame"].pack_forget()
+            else:
+                item["col_frame"].pack(fill="x", padx=20)
+
+    def remove_dataframe(self, df_id):
+        if df_id in self.all_parsed_data_dict:
+            del self.all_parsed_data_dict[df_id]
+
+        if df_id in self.left_items:
+            item = self.left_items[df_id]
+
+            if "toggle_button" in item:
+                item["toggle_button"].destroy()
+            if "remove_button" in item:
+                item["remove_button"].destroy()
+            if "col_frame" in item:
+                item["col_frame"].destroy()
+            del self.left_items[df_id]
+
+        gc.collect()
+        self.update_selection_options()
+
+    def update_selection_options(self):
+        self.df_ids = [str(k) for k in self.all_parsed_data_dict.keys()]
+        if not self.df_ids:
+            self.df_ids = ["No Data"]
+        self.df_select_1.configure(values=self.df_ids)
+        self.df_select_2.configure(values=self.df_ids)
+
+    def build_center_panel(self):
+        container = ctk.CTkFrame(self.center_panel, fg_color="transparent", bg_color="transparent")
+        container.pack(fill="both", expand=True)
+
+        selection_container = ctk.CTkFrame(container, fg_color="transparent", bg_color="transparent")
+        selection_container.pack(fill="x", pady=10)
+        ctk.CTkLabel(selection_container, text="Dataframes Selection", font=("Arial", 16, "bold"),
+                     fg_color="transparent", bg_color="transparent").pack(pady=5)
+
+        self.selection_frame1 = ctk.CTkFrame(selection_container, fg_color="transparent", bg_color="transparent")
+        self.selection_frame1.pack(fill="x", padx=5, pady=5)
+        self.df_ids = [str(k) for k in self.all_parsed_data_dict.keys()]
+        if not self.df_ids:
+            self.df_ids = ["No Data"]
+        self.df_select_1 = ctk.CTkOptionMenu(self.selection_frame1, values=self.df_ids,
+                                             command=self.update_columns_1)
+        self.df_select_1.pack(side="left", padx=5, pady=5)
+        self.df_select_1.set(self.df_ids[0])
+        try:
+            id1 = int(self.df_select_1.get())
+        except:
+            id1 = None
+        columns1 = self.all_parsed_data_dict.get(id1, {}).get("list_of_columns", []) if id1 is not None else []
+        self.col_select_1 = ctk.CTkOptionMenu(self.selection_frame1, values=columns1)
+        self.col_select_1.pack(side="left", padx=5, pady=5)
+        if columns1:
+            self.col_select_1.set(columns1[0])
+
+        self.selection_frame2 = ctk.CTkFrame(selection_container, fg_color="transparent", bg_color="transparent")
+        self.selection_frame2.pack(fill="x", padx=5, pady=5)
+        self.df_select_2 = ctk.CTkOptionMenu(self.selection_frame2, values=self.df_ids,
+                                             command=self.update_columns_2)
+        self.df_select_2.pack(side="left", padx=5, pady=5)
+        self.df_select_2.set(self.df_ids[0])
+        try:
+            id2 = int(self.df_select_2.get())
+        except:
+            id2 = None
+        columns2 = self.all_parsed_data_dict.get(id2, {}).get("list_of_columns", []) if id2 is not None else []
+        self.col_select_2 = ctk.CTkOptionMenu(self.selection_frame2, values=columns2)
+        self.col_select_2.pack(side="left", padx=5, pady=5)
+        if columns2:
+            self.col_select_2.set(columns2[0])
+
+        # RAM Usage
+        ram_container = ctk.CTkFrame(container, fg_color="transparent", bg_color="transparent")
+        ram_container.pack(fill="x", pady=10, side="bottom")
+        self.ram_frame = ctk.CTkFrame(self.center_panel, fg_color="transparent", bg_color="transparent")
+        self.ram_frame.pack(side="bottom", fill="x", pady=10)
+        self.ram_label = ctk.CTkLabel(self.ram_frame, text="RAM Usage: ", font=("Arial", 12),
+                                      fg_color="transparent", bg_color="transparent")
+        self.ram_label.pack(side="bottom", pady=5)
+        self.ram_progressbar = ctk.CTkProgressBar(self.ram_frame)
+        self.ram_progressbar.pack(side="bottom", fill="x", padx=5, pady=5)
+        self.update_ram_usage()
+
+    def update_columns_1(self, selected_id):
+        try:
+            id_int = int(selected_id)
+        except:
+            id_int = None
+        columns = self.all_parsed_data_dict.get(id_int, {}).get("list_of_columns", [])
+        self.col_select_1.configure(values=columns)
+        if columns:
+            self.col_select_1.set(columns[0])
+
+    def update_columns_2(self, selected_id):
+        try:
+            id_int = int(selected_id)
+        except:
+            id_int = None
+        columns = self.all_parsed_data_dict.get(id_int, {}).get("list_of_columns", [])
+        self.col_select_2.configure(values=columns)
+        if columns:
+            self.col_select_2.set(columns[0])
+
+    def update_ram_usage(self):
+        mem = psutil.virtual_memory()
+        usage = mem.percent
+        self.ram_label.configure(
+            text=f"RAM Usage: {usage}% ({mem.used // (1024 * 1024)} MB / {mem.total // (1024 * 1024)} MB)")
+        self.ram_progressbar.set(usage / 100)
+        self.after(1000, self.update_ram_usage)
+
+    def build_right_panel(self):
+        container = ctk.CTkFrame(self.right_panel, fg_color="transparent", bg_color="transparent")
+        container.pack(fill="both", expand=True)
+
+        options_container = ctk.CTkFrame(container, fg_color="transparent", bg_color="transparent")
+        options_container.pack(pady=5)
+
+        plot_type_frame = ctk.CTkFrame(options_container, fg_color="transparent", bg_color="transparent")
+        plot_type_frame.pack(pady=5)
+        plot_type_label = ctk.CTkLabel(plot_type_frame, text="Plot options", font=("Arial", 12, "bold"),
+                                       fg_color="transparent", bg_color="transparent")
+        plot_type_label.pack(pady=(10, 5))
+        self.plot_type_var = ctk.StringVar(value="line")
+        plot_type_button_line = ctk.CTkRadioButton(plot_type_frame, text="Line", variable=self.plot_type_var,
+                                                   value="line", command=self.plot_type_changed)
+        plot_type_button_line.pack(side="left", padx=15, pady=5)
+        plot_type_button_scatter = ctk.CTkRadioButton(plot_type_frame, text="Scatter", variable=self.plot_type_var,
+                                                      value="scatter", command=self.plot_type_changed)
+        plot_type_button_scatter.pack(side="left", padx=15, pady=5)
+        plot_type_frame.configure(fg_color="transparent", bg_color="transparent")
+
+        plot_scale_frame = ctk.CTkFrame(options_container, fg_color="transparent", bg_color="transparent")
+        plot_scale_frame.pack(pady=5)
+        plot_scale_label = ctk.CTkLabel(plot_scale_frame, text="Plot scale options", font=("Arial", 12, "bold"),
+                                        fg_color="transparent", bg_color="transparent")
+        plot_scale_label.pack(pady=(10, 5))
+        self.plot_scale_var = ctk.StringVar(value="linear")
+        plot_scale_button_linear = ctk.CTkRadioButton(plot_scale_frame, text="Linear", variable=self.plot_scale_var,
+                                                      value="linear", command=self.plot_scale_changed)
+        plot_scale_button_linear.pack(side="left", padx=15, pady=5)
+        plot_scale_button_logarithmic = ctk.CTkRadioButton(plot_scale_frame, text="Logarithmic",
+                                                           variable=self.plot_scale_var,
+                                                           value="logarithmic", command=self.plot_scale_changed)
+        plot_scale_button_logarithmic.pack(side="left", padx=15, pady=5)
+        plot_scale_frame.configure(fg_color="transparent", bg_color="transparent")
+
+        solar_container = ctk.CTkFrame(options_container, fg_color="transparent", bg_color="transparent")
+        solar_container.pack(pady=5)
+        solar_checkbox = ctk.CTkCheckBox(solar_container, text="Add Solar Data", variable=self.add_solar_var)
+        solar_checkbox.pack(pady=(10, 5))
+
+        action_container = ctk.CTkFrame(container, fg_color="transparent", bg_color="transparent")
+        action_container.pack(pady=5, fill="both", expand=True)
+        ctk.CTkLabel(action_container, text="Action Panel", font=("Arial", 16, "bold"),
+                     fg_color="transparent", bg_color="transparent").pack(pady=10)
+        self.comp_plot_button = ctk.CTkButton(action_container, text="Comparison Plot",
+                                              command=self.generate_comparision_plot)
+        self.comp_plot_button.pack(padx=5, pady=5)
+
+        bottom_frame = ctk.CTkFrame(container, fg_color="transparent", bg_color="transparent")
+        bottom_frame.pack(side="bottom", fill="x", padx=5, pady=5)
+        self.refresh_button = ctk.CTkButton(bottom_frame, text="Refresh", fg_color="green",
+                                            command=self.refresh_window)
+        self.refresh_button.pack(side="top", padx=5, pady=5)
+        self.exit_button = ctk.CTkButton(bottom_frame, text="Exit", fg_color="red", command=self.destroy)
+        self.exit_button.pack(side="top", padx=5, pady=5)
+
+    def plot_type_changed(self):
+        pass
+
+    def plot_scale_changed(self):
+        pass
+
+    def refresh_window(self):
+        current_geometry = self.geometry()
+        self.destroy()
+        new_window = AdvancedPlotsWindow(self.master, self.all_parsed_data_dict)
+        new_window.geometry(current_geometry)
+
+    def generate_comparision_plot(self):
+        df_id_1 = self.df_select_1.get()
+        df_id_2 = self.df_select_2.get()
+        col1 = self.col_select_1.get()
+        col2 = self.col_select_2.get()
+        try:
+            id1 = int(df_id_1)
+            id2 = int(df_id_2)
+        except:
+            print("Error")
+            return
+        df1 = self.all_parsed_data_dict.get(id1, {}).get("df", None)
+        df2 = self.all_parsed_data_dict.get(id2, {}).get("df", None)
+        if df1 is None or df2 is None:
+            print("None")
+            return
+        plot_type = self.plot_type_var.get()
+        log_scale = True if self.plot_scale_var.get() == "logarithmic" else False
+        Plots.plot_two_cols(df1, col1, df2, col2, plot_type=plot_type, log_scale=log_scale, add_sunspot=self.add_solar_var, show=True)
+
+
 if __name__ == "__main__":
     import multiprocessing
 
     multiprocessing.freeze_support()
-    root = tk.Tk()
-    app = App(root)
-    root.mainloop()
+    app = App()
+    app.mainloop()
+

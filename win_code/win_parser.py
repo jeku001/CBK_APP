@@ -144,5 +144,6 @@ class Parser:
         total_duration = self.end_time - self.start_time
         print(f"{threading.current_thread()}: Processing completed in {total_duration:.2f} seconds")
 
+
         return long_df
 
