@@ -733,13 +733,19 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
     def remove_dataframe(self, df_id):
         if df_id in self.all_parsed_data_dict:
             del self.all_parsed_data_dict[df_id]
-        item = self.left_items.get(df_id)
-        if item:
-            item["toggle_button"].destroy()
-            item["remove_button"].destroy()
-            item["col_frame"].destroy()
+
+        if df_id in self.left_items:
+            item = self.left_items[df_id]
+
+            if "toggle_button" in item:
+                item["toggle_button"].destroy()
+            if "remove_button" in item:
+                item["remove_button"].destroy()
+            if "col_frame" in item:
+                item["col_frame"].destroy()
             del self.left_items[df_id]
-        self.update_selection_options()
+
+        self.update_selection_options()  #
 
     def update_selection_options(self):
         self.df_ids = [str(k) for k in self.all_parsed_data_dict.keys()]
