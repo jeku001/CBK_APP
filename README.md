@@ -139,10 +139,13 @@ To run the application, follow these steps:
 5. (Optional) Check **Add Solar Data** to include number of sunspots in plot.
 6. **Click Comparison** Plot to generate plot.
 
+<h2 align="center">Advanced Plots Window</h2>
+
 <p align="center">
-  <img src="images/Advances_plots_window.png" alt="PAdvanced Plots Window">
+  <img src="images/Advanced_plots_window.png" alt="Advanced Plots Window">
 </p>
 
+<h2 align="center">Example Comparison Plot</h2>
 <p align="center">
   <img src="images/example_comparison_plot.png" alt="Example Comparison Plot">
 </p>
