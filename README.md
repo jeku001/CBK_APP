@@ -137,7 +137,7 @@ To run the application, follow these steps:
 2. On left panel, parsed dataframes will appear. Click Refresh if needed.
 3. In the middle panel, select two dataframes and choose specific columns.
 4. Set Plot Options
-5. (Optional) Check **Add Solar Data** to include number of sunspots in plot.
+5. (Optional) Check **Add Solar Data** to include daily number of sunspots in plot.
 6. **Click Comparison** Plot to generate plot.
 
 <h2 align="center">Advanced Plots Window</h2>
