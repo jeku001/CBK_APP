@@ -9,6 +9,7 @@
   - [Step 3: Running the Parser](#step-3-running-the-parser)
   - [Step 4: Plotting Data](#step-4-plotting-data)
   - [Optional: Saving Parsed Data](#optional-saving-parsed-data)
+  - [Step 5: Advanced Plots](#step-5-advanced-plots)
 - [Source of Data](#source-of-data)
 - [Data Format](#data-format)
 - [Acknowledgements](#acknowledgements)
@@ -130,6 +131,21 @@ To run the application, follow these steps:
 1. Click **Save Parsed File** to export the parsed data as a CSV file.
 2. Choose the destination and filename in the save dialog.
 
+### Step 5: Advanced Plots
+1. Click the **Advanced Plots** button to open advanced plotting window.
+2. On left panel, parsed dataframes will appear. Click Refresh if needed.
+3. In the middle panel, select two dataframes and choose specific columns.
+4. Set Plot Options
+5. (Optional) Check **Add Solar Data** to include number of sunspots in plot.
+6. **Click Comparison** Plot to generate plot.
+
+<p align="center">
+  <img src="images/Advances_plots_window.png" alt="PAdvanced Plots Window">
+</p>
+
+<p align="center">
+  <img src="images/example_comparison_plot.png" alt="Example Comparison Plot">
+</p>
 ---
 
 ## Acknowledgements
