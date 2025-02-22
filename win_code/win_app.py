@@ -229,7 +229,6 @@ class App(ctk.CTk):
 
     def download_parsed_file(self):
         if self.parsed_data is not None and not self.parsed_data.empty:
-            # print(self.parsed_data)
             output_file = filedialog.asksaveasfilename(
                 defaultextension=".csv",
                 filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
@@ -622,13 +621,11 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
 
         self.add_solar_var = ctk.BooleanVar(value=False)
 
-        # Ustawiamy grid na trzy kolumny: lewy, centralny, prawy
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
         self.grid_columnconfigure(2, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
-        # Główne panele z przezroczystym tłem
         self.left_panel = ctk.CTkFrame(self, fg_color="transparent", bg_color="transparent")
         self.left_panel.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
 
@@ -638,7 +635,6 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
         self.right_panel = ctk.CTkFrame(self, fg_color="transparent", bg_color="transparent")
         self.right_panel.grid(row=0, column=2, sticky="nsew", padx=5, pady=5)
 
-        # Budujemy poszczególne sekcje
         self.build_left_panel()
         self.build_center_panel()
         self.build_right_panel()
@@ -668,11 +664,10 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
             item_frame = ctk.CTkFrame(self.scrollable_left, fg_color="transparent", bg_color="transparent")
             item_frame.pack(fill="x", pady=5)
 
-            # Węższy przycisk ID
             id_button = ctk.CTkButton(
                 item_frame,
                 text=f"{df_id}",
-                width=40,  # ustalamy szerokość
+                width=40,
                 command=lambda i=df_id: self.select_dataframe(i)
             )
             id_button.pack(side="left", padx=5)
@@ -746,7 +741,7 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
             del self.left_items[df_id]
 
         gc.collect()
-        self.update_selection_options()  #
+        self.update_selection_options()
 
     def update_selection_options(self):
         self.df_ids = [str(k) for k in self.all_parsed_data_dict.keys()]
@@ -935,3 +930,4 @@ if __name__ == "__main__":
     multiprocessing.freeze_support()
     app = App()
     app.mainloop()
+

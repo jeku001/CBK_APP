@@ -9,25 +9,20 @@ class Plots:
 
     @staticmethod
     def load_sunspot_data(sunspot_path="2010_2024_Sunspot_number_F10_daily.csv"):
-        """ Wczytuje dane o plamach słonecznych, obsługując tryb PyInstaller """
 
-        # Znalezienie poprawnej ścieżki pliku
-        if getattr(sys, 'frozen', False):  # Sprawdza, czy program jest skompilowany przez PyInstaller
+        if getattr(sys, 'frozen', False):
             base_path = sys._MEIPASS
         else:
             base_path = os.path.abspath(os.path.join(os.getcwd(), "../additional_data"))
 
         full_path = os.path.join(base_path, sunspot_path)
 
-        # Sprawdzenie, czy plik istnieje
         if not os.path.isfile(full_path):
             raise FileNotFoundError(f"Error: File '{full_path}' not found.")
 
         try:
-            # Wczytywanie pliku CSV
             sunspot_df = pd.read_csv(full_path, sep=r'\s+', engine='python', header=None,
                                      names=["Year", "Day_of_Year", "Hour", "Sunspot_Number", "F10.7_Index"])
-            # Tworzenie kolumny z datą
             sunspot_df["Datetime"] = Plots.combine_datetime(sunspot_df)
 
         except Exception as e:
@@ -43,7 +38,6 @@ class Plots:
         hour = df.iloc[:, 2]
         dt = pd.to_datetime(year.astype(str), format='%Y') + pd.to_timedelta(day_of_year - 1,
                                                                              unit='D') + pd.to_timedelta(hour, unit='h')
-        print(dt)
         return dt
 
     @staticmethod
@@ -97,9 +91,6 @@ class Plots:
                        label=f'{column2} (DF2)', color='orange', s=0.2)
 
         if add_sunspot:
-            print("wszedlem tu (Jest true)")
-            print(f"type of var: {add_sunspot}")
-            # print(f"type of var 'z get': {add_sunspot.get()}")
             sunspot_df = Plots.load_sunspot_data()
             x_sun = sunspot_df["Datetime"]
             y_sun = sunspot_df.iloc[:, 3]
