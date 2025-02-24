@@ -75,37 +75,53 @@ class Plots:
     @staticmethod
     def plot_two_cols(df1, column1, df2, column2,
                       plot_type="line", log_scale=False,
-                      show=False, add_sunspot=None):
+                      show=False, add_sunspot=None, add_moving_average=False):
         fig, ax = plt.subplots(figsize=(10, 6))
         add_sunspot = add_sunspot.get()
+        add_moving_average = add_moving_average.get()
 
         if plot_type == "line":
-            ax.plot(df1[df1.columns[0]], df1[column1],
-                    label=f'{column1} (DF1)', color='blue', linewidth=0.2)
-            ax.plot(df2[df2.columns[0]], df2[column2],
-                    label=f'{column2} (DF2)', color='orange', linewidth=0.2)
+            if add_moving_average:
+                ax.plot(df1[df1.columns[0]], df1[column1],
+                        label=f'{column1} (DF1)', color='blue', linewidth=0.2, alpha=0.4)
+                ax.plot(df2[df2.columns[0]], df2[column2],
+                        label=f'{column2} (DF2)', color='orange', linewidth=0.2, alpha=0.4)
+            else:
+                ax.plot(df1[df1.columns[0]], df1[column1],
+                        label=f'{column1} (DF1)', color='blue', linewidth=0.2, alpha=0.9)
+                ax.plot(df2[df2.columns[0]], df2[column2],
+                        label=f'{column2} (DF2)', color='orange', linewidth=0.2, alpha=0.9)
         elif plot_type == "scatter":
-            ax.scatter(df1[df1.columns[0]], df1[column1],
-                       label=f'{column1} (DF1)', color='blue', s=0.2)
-            ax.scatter(df2[df2.columns[0]], df2[column2],
-                       label=f'{column2} (DF2)', color='orange', s=0.2)
+            if add_moving_average:
+                ax.scatter(df1[df1.columns[0]], df1[column1],
+                           label=f'{column1} (DF1)', color='blue', s=0.2, linewidths=0, alpha=0.3)
+                ax.scatter(df2[df2.columns[0]], df2[column2],
+                           label=f'{column2} (DF2)', color='orange', s=0.2, linewidths=0, alpha=0.3)
+            else:
+                ax.scatter(df1[df1.columns[0]], df1[column1],
+                           label=f'{column1} (DF1)', color='blue', s=0.2, linewidths=0, alpha=0.9)
+                ax.scatter(df2[df2.columns[0]], df2[column2],
+                           label=f'{column2} (DF2)', color='orange', s=0.2, linewidths=0, alpha=0.9)
+
+        if add_moving_average:
+            print(f"add_ma_true")
+            df1_ma = df1[column1].rolling(window=1001, center=True, min_periods=100).mean()
+            df2_ma = df2[column2].rolling(window=1001, center=True, min_periods=100).mean()
+            ax.plot(df1[df1.columns[0]], df1_ma, label=f"{column1} Moving Avg (DF1)", color="blue", linewidth=1, alpha=0.9)
+            ax.plot(df2[df2.columns[0]], df2_ma, label=f"{column2} Moving Avg (DF2)", color="orange", linewidth=1, alpha=0.9)
 
         if add_sunspot:
             sunspot_df = Plots.load_sunspot_data()
-            x_sun = sunspot_df["Datetime"]
-            y_sun = sunspot_df.iloc[:, 3]
-
             min_year_value = min(df1[df1.columns[0]].min().year, df2[df2.columns[0]].min().year)
             max_year_value = max(df1[df1.columns[0]].max().year, df2[df2.columns[0]].max().year) + 1
             min_year = pd.to_datetime(str(min_year_value), format='%Y')
             max_year = pd.to_datetime(str(max_year_value), format='%Y')
             mask = (sunspot_df["Datetime"] >= min_year) & (sunspot_df["Datetime"] <= max_year)
             filtered_sunspot_df = sunspot_df.loc[mask]
-            x_sun = filtered_sunspot_df["Datetime"]
-            y_sun = filtered_sunspot_df.iloc[:, 3]
 
             ax2 = ax.twinx()
-            ax2.plot(x_sun, y_sun, label="Sunspot", color="red", linewidth=0.5)
+            ax2.plot(filtered_sunspot_df["Datetime"], filtered_sunspot_df.iloc[:, 3],
+                     label="Sunspot", color="red", linewidth=0.5)
 
             ax2.set_ylabel("Sunspot Values", color="red")
             ax2.tick_params(axis="y", labelcolor="red")
@@ -127,4 +143,5 @@ class Plots:
         if show:
             plt.show()
         return plt
+
 

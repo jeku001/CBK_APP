@@ -620,6 +620,7 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
         self.geometry("800x600")
 
         self.add_solar_var = ctk.BooleanVar(value=False)
+        self.add_rolling_average = ctk.BooleanVar(value=False)
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
@@ -870,10 +871,15 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
         plot_scale_button_logarithmic.pack(side="left", padx=15, pady=5)
         plot_scale_frame.configure(fg_color="transparent", bg_color="transparent")
 
-        solar_container = ctk.CTkFrame(options_container, fg_color="transparent", bg_color="transparent")
-        solar_container.pack(pady=5)
-        solar_checkbox = ctk.CTkCheckBox(solar_container, text="Add Solar Data", variable=self.add_solar_var)
-        solar_checkbox.pack(pady=(10, 5))
+        additional_options_container = ctk.CTkFrame(options_container, fg_color="transparent", bg_color="transparent")
+        additional_options_container.pack(pady=5)
+        solar_checkbox = ctk.CTkCheckBox(additional_options_container, text="Add Solar Data",
+                                         variable=self.add_solar_var)
+        solar_checkbox.pack(pady=(5, 0), anchor="w")
+        rolling_checkbox = ctk.CTkCheckBox(additional_options_container, text="Add Rolling Average",
+                                           variable=self.add_rolling_average)
+        rolling_checkbox.pack(pady=(5, 0), anchor="w")
+
 
         action_container = ctk.CTkFrame(container, fg_color="transparent", bg_color="transparent")
         action_container.pack(pady=5, fill="both", expand=True)
@@ -921,7 +927,7 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
             return
         plot_type = self.plot_type_var.get()
         log_scale = True if self.plot_scale_var.get() == "logarithmic" else False
-        Plots.plot_two_cols(df1, col1, df2, col2, plot_type=plot_type, log_scale=log_scale, add_sunspot=self.add_solar_var, show=True)
+        Plots.plot_two_cols(df1, col1, df2, col2, plot_type=plot_type, log_scale=log_scale, add_sunspot=self.add_solar_var, show=True, add_moving_average=self.add_rolling_average)
 
 
 if __name__ == "__main__":
