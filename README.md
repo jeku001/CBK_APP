@@ -9,6 +9,7 @@
   - [Step 3: Running the Parser](#step-3-running-the-parser)
   - [Step 4: Plotting Data](#step-4-plotting-data)
   - [Optional: Saving Parsed Data](#optional-saving-parsed-data)
+  - [Step 5: Advanced Plots](#step-5-advanced-plots)
 - [Source of Data](#source-of-data)
 - [Data Format](#data-format)
 - [Acknowledgements](#acknowledgements)
@@ -32,6 +33,7 @@ The data originates from the Lem and Heweliusz satellites. However, the raw data
 - **LEM Satellite**: A Polish satellite launched in 2013, primarily designed for stellar photometry and astrophysical observations.
 - **HEWELIUSZ Satellite**: Launched in 2014, Heweliusz complements Lem's mission with additional capabilities for space environment monitoring. Housekeeping dataset spans from their launch dates to the present, amounting to over 30GB of CSV files.
 
+Daily sunspots number from http://sidc.oma.be/silso/datafiles
 
 ### Data Format
 The files are organized in a hierarchical structure. For example:
@@ -130,6 +132,24 @@ To run the application, follow these steps:
 1. Click **Save Parsed File** to export the parsed data as a CSV file.
 2. Choose the destination and filename in the save dialog.
 
+### Step 5: Advanced Plots
+1. Click the **Advanced Plots** button to open advanced plotting window.
+2. On left panel, parsed dataframes will appear. Click Refresh if needed.
+3. In the middle panel, select two dataframes and choose specific columns.
+4. Set Plot Options
+5. (Optional) Check **Add Solar Data** to include daily number of sunspots in plot.
+6. **Click Comparison** Plot to generate plot.
+
+<h2 align="center">Advanced Plots Window</h2>
+
+<p align="center">
+  <img src="images/Advanced_plots_window.png" alt="Advanced Plots Window">
+</p>
+
+<h2 align="center">Example Comparison Plot</h2>
+<p align="center">
+  <img src="images/example_comparison_plot.png" alt="Example Comparison Plot">
+</p>
 ---
 
 ## Acknowledgements
