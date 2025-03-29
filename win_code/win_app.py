@@ -52,7 +52,8 @@ class App(ctk.CTk):
             "6-ACS": self.get_columns_6(),
             "7-ADCS": self.get_columns_7(),
             "8-ADC_SUB": self.get_columns_8(),
-            "9-Header Board": self.get_columns_9()
+            "9-Header Board": self.get_columns_9(),
+            "A-SatLoc": self.get_columns_A(),
         }
         self.left_frame = ctk.CTkFrame(self, width=250, corner_radius=10)
         self.center_frame = ctk.CTkFrame(self, corner_radius=10, bg_color="transparent")
@@ -358,6 +359,10 @@ class App(ctk.CTk):
                 "'Converted Temp3 File(°C)", "'Converted Temp4 File(°C)", "'Controller P Gain File",
                 "'Controller I Gain File", "'Controller D Gain File", "'Controller I Max File",
                 "'Controller Max DT File", "'Controller SetPoint File", "'Controller I State File"]
+
+    @staticmethod
+    def get_columns_A():
+        return ["'Lat","'Lon","'R[m]","'ECF_X[m]","'ECF_Y[m]","'ECF_Z[m]","'ECF_VX[m/s]","'ECF_VY[m/s]","'ECF_VZ[m/s]"]
 
     def update_plot_columns_list_safe(self):
         if self:
@@ -873,7 +878,7 @@ class AdvancedPlotsWindow(ctk.CTkToplevel):
 
         additional_options_container = ctk.CTkFrame(options_container, fg_color="transparent", bg_color="transparent")
         additional_options_container.pack(pady=5)
-        solar_checkbox = ctk.CTkCheckBox(additional_options_container, text="Add Solar Data",
+        solar_checkbox = ctk.CTkCheckBox(additional_options_container, text="Add Daily Sunspots number",
                                          variable=self.add_solar_var)
         solar_checkbox.pack(pady=(5, 0), anchor="w")
         rolling_checkbox = ctk.CTkCheckBox(additional_options_container, text="Add Rolling Average",
