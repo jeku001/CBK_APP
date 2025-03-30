@@ -1,4 +1,3 @@
-*.csv
 UAM_BRITE/
 !linux_app/
 !win_app/
