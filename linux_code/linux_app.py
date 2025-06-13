@@ -16,7 +16,6 @@ class App:
         self.parsed_data = None
         self.additional_columns = []
 
-        # Mapowanie wzorców plików na listy kolumn
         self.pattern_columns = {
             "0-Power Board": self.get_columns_0(),
             "1-BCDR0": self.get_columns_1(),
@@ -42,7 +41,6 @@ class App:
         self.folder_entry.grid(row=1, column=1, padx=10, pady=5, sticky="w")
         tk.Button(root, text="Browse", command=self.browse_folder).grid(row=1, column=2, padx=10, pady=5, sticky="w")
 
-        # Start & End Year
         tk.Label(root, text="Start Year").grid(row=2, column=0, padx=10, pady=5, sticky="e")
         self.start_year_entry = tk.Entry(root, width=10)
         self.start_year_entry.grid(row=2, column=1, padx=(0, 10), pady=5, sticky="w")
@@ -51,7 +49,6 @@ class App:
         self.end_year_entry = tk.Entry(root, width=10)
         self.end_year_entry.grid(row=3, column=1, padx=(0, 10), pady=5, sticky="w")
 
-        # File Pattern
         tk.Label(root, text="File Pattern").grid(row=4, column=0, padx=10, pady=5, sticky="e")
         self.pattern_combo = ttk.Combobox(root, values=list(self.pattern_columns.keys()), state="readonly")
         self.pattern_combo.grid(row=4, column=1, columnspan=2, padx=10, pady=5, sticky="w")
@@ -85,7 +82,6 @@ class App:
         multi_radio = tk.Radiobutton(root, text="parallel processing mode", variable=self.mode_var, value="multi", command=self.toggle_workers)
         multi_radio.grid(row=7, column=1, sticky="w")
 
-        # question marks
         single_help = tk.Label(root, text="?", fg="blue", cursor="hand2", font=("arial", 12, "bold"))
         single_help.grid(row=6, column=1, padx=5)
         single_help.bind("<Enter>", lambda e: self.show_tooltip(e, "Single-process mode processes files one by one"))
@@ -96,7 +92,6 @@ class App:
         multi_help.bind("<Enter>", lambda e: self.show_tooltip(e, "Parallel processing mode is more efficient for larger datasets"))
         multi_help.bind("<Leave>", self.hide_tooltip)
 
-        # Label for parallel tasks
         tk.Label(root, text="Parallel tasks").grid(row=8, column=0, padx=10, pady=5, sticky="e")
         self.workers_spin = tk.Spinbox(root, from_=2, to=16, width=5, state="disabled")
         self.workers_spin.grid(row=8, column=1, padx=(10, 50), pady=5, sticky="w")
@@ -160,12 +155,10 @@ class App:
         self.progress_label = tk.Label(root, text="Files processed: 0/0", fg="blue")
         self.progress_label.grid(row=15, column=1, columnspan=1, pady=2)
 
-        # Załaduj domyślne kolumny
         self.update_columns()
 
 
     def show_tooltip(self, event, text):
-        # Create a tooltip window
         self.tooltip = tk.Toplevel()
         self.tooltip.overrideredirect(True)  # Remove window decorations
         self.tooltip.geometry(f"+{event.x_root+10}+{event.y_root+10}")  # Position near cursor
@@ -173,7 +166,6 @@ class App:
         label.pack()
 
     def hide_tooltip(self, event):
-        # Destroy the tooltip window
         if hasattr(self, "tooltip"):
             self.tooltip.destroy()
 
@@ -193,7 +185,6 @@ class App:
             self.folder_entry.insert(0, folder_selected)
 
     def update_columns(self, event=None):
-        # Wyczyść istniejące elementy w scrollable_frame
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
 
@@ -382,4 +373,4 @@ if __name__ == "__main__":
     app = App(root)
     root.mainloop()
 
-#pyinstaller --onefile --console --hidden-import matplotlib --hidden-import matplotlib.backends --hidden-import PIL.ImageTk --hidden-import PIL._tkinter_finder win_app.py
+#pyinstaller --onefile --console --hidden-import matplotlib --hidden-import matplotlib.backends --hidden-import PIL.ImageTk --hidden-import PIL._tkinter_finder linux_app.py
