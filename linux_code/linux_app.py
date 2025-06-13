@@ -29,6 +29,7 @@ class App:
             "8-ADC_SUB": self.get_columns_8(),
             "9-Header Board": self.get_columns_9(),
             "A-SatLoc": self.get_columns_A(),
+            "B-SatLoc": self.get_columns_B()
         }
 
         tk.Label(root, text="Please click Browse to select the 'WOD/Parsed' folder with data to begin.", font=("Arial", 10, "bold")).grid(
@@ -321,6 +322,9 @@ class App:
         return ["'Reset Count File","'Reset Reason File","'Comm Err Count File","'Scrub Index File","'SEU Count File","'Init Pointer File","'Ping Pointer File","'ADC Raw1 File","'ADC Raw2 File","'ADC Raw3 File","'ADC Raw4 File","'PWM Setting File","'PWM Period File","'PWM Controller Pointer File","'PWM Controller Cycle File","'PWM DCycle1 File","'PWM DCycle2 File","'PWM DCycle3 File","'PWM DCycle4 File","'Converted Temp1 File(°C)","'Converted Temp2 File(°C)","'Converted Temp3 File(°C)","'Converted Temp4 File(°C)","'Controller P Gain File","'Controller I Gain File","'Controller D Gain File","'Controller I Max File","'Controller Max DT File","'Controller SetPoint File","'Controller I State File"]
 
     def get_columns_A(self):
+        return ["'Lat","'Lon","'R[m]","'ECF_X[m]","'ECF_Y[m]","'ECF_Z[m]","'ECF_VX[m/s]","'ECF_VY[m/s]","'ECF_VZ[m/s]"]
+
+    def get_columns_B(self):
         return ["'Lat","'Lon","'R[m]","'ECF_X[m]","'ECF_Y[m]","'ECF_Z[m]","'ECF_VX[m/s]","'ECF_VY[m/s]","'ECF_VZ[m/s]"]
 
 

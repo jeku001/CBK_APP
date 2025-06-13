@@ -54,6 +54,7 @@ class App(ctk.CTk):
             "8-ADC_SUB": self.get_columns_8(),
             "9-Header Board": self.get_columns_9(),
             "A-SatLoc": self.get_columns_A(),
+            "B-SatLoc": self.get_columns_B()
         }
         self.left_frame = ctk.CTkFrame(self, width=250, corner_radius=10)
         self.center_frame = ctk.CTkFrame(self, corner_radius=10, bg_color="transparent")
@@ -363,6 +364,11 @@ class App(ctk.CTk):
     @staticmethod
     def get_columns_A():
         return ["'Lat","'Lon","'R[m]","'ECF_X[m]","'ECF_Y[m]","'ECF_Z[m]","'ECF_VX[m/s]","'ECF_VY[m/s]","'ECF_VZ[m/s]"]
+
+    @staticmethod
+    def get_columns_B():
+        return ["'Lat", "'Lon", "'R[m]", "'ECF_X[m]", "'ECF_Y[m]", "'ECF_Z[m]", "'ECF_VX[m/s]", "'ECF_VY[m/s]",
+                "'ECF_VZ[m/s]"]
 
     def update_plot_columns_list_safe(self):
         if self:
